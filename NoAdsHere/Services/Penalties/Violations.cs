@@ -72,7 +72,7 @@ namespace NoAdsHere.Services.Penalties
 
         private static int CalcDecreasingPoints(Violator violator)
         {
-            int decPoints = 0;
+            var decPoints = 0;
             var time = violator.LatestViolation;
             while (DateTime.Now > time)
             {
