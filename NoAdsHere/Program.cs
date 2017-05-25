@@ -53,9 +53,12 @@ namespace NoAdsHere
 
             var inviteChecker = new DiscordInvites(serviceProvider);
             await inviteChecker.StartService();
-            
+
             var youtubeChecker = new Youtube(serviceProvider);
             await youtubeChecker.StartService();
+
+            var twitchChecker = new Twitch(serviceProvider);
+            await twitchChecker.StartService();
 
             await Task.Delay(-1);
         }
