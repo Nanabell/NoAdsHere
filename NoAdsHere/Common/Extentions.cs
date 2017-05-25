@@ -1,7 +1,4 @@
-﻿using System;
-using Discord;
-using System.Collections.Generic;
-using System.Text;
+﻿using Discord;
 
 namespace NoAdsHere.Common
 {

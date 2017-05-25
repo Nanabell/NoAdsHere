@@ -14,15 +14,15 @@ namespace NoAdsHere
 {
     internal class Program
     {
-        private static void Main(string[] args) =>
+        private static void Main() =>
             new Program().RunAsync().GetAwaiter().GetResult();
 
         private DiscordSocketClient _client;
         private Config _config;
         private MongoClient _mongo;
         private CommandHandler _handler;
-        private Logger _logger = LogManager.GetLogger("Core");
-        private Logger logger = LogManager.GetLogger("Discord");
+        private readonly Logger _logger = LogManager.GetLogger("Core");
+        private readonly Logger _discordLogger = LogManager.GetLogger("Discord");
 
         public async Task RunAsync()
         {
@@ -79,9 +79,9 @@ namespace NoAdsHere
         private Task ClientLogger(LogMessage message)
         {
             if (message.Exception == null)
-                logger.Log(LogLevelParser(message.Severity), message.Message);
+                _discordLogger.Log(LogLevelParser(message.Severity), message.Message);
             else
-                logger.Log(LogLevelParser(message.Severity), message.Exception, message.Message);
+                _discordLogger.Log(LogLevelParser(message.Severity), message.Exception, message.Message);
 
             return Task.CompletedTask;
         }

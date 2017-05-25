@@ -21,7 +21,7 @@ namespace NoAdsHere
         private readonly DiscordSocketClient _client;
         private readonly Config _config;
         private readonly Logger _logger = LogManager.GetLogger("CommandHandler");
-        private readonly Logger logger = LogManager.GetLogger("Command");
+        private readonly Logger _discordLogger = LogManager.GetLogger("Command");
 
         private IEnumerable<ulong> Whitelist => _config.ChannelWhitelist;
 
@@ -39,9 +39,9 @@ namespace NoAdsHere
         private Task CommandLogger(LogMessage message)
         {
             if (message.Exception == null)
-                logger.Log(Program.LogLevelParser(message.Severity), message.Message);
+                _discordLogger.Log(Program.LogLevelParser(message.Severity), message.Message);
             else
-                logger.Log(Program.LogLevelParser(message.Severity), message.Exception, message.Message);
+                _discordLogger.Log(Program.LogLevelParser(message.Severity), message.Exception, message.Message);
 
             return Task.CompletedTask;
         }

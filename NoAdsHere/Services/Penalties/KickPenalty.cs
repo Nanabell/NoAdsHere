@@ -10,7 +10,7 @@ namespace NoAdsHere.Services.Penalties
 {
     public static class KickPenalty
     {
-        private static Logger _logger = LogManager.GetLogger("AntiAds");
+        private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
         public static async Task KickAsync(ICommandContext context)
         {
@@ -20,13 +20,13 @@ namespace NoAdsHere.Services.Penalties
             {
                 try
                 {
-                    await (context.User as IGuildUser).KickAsync();
+                    await ((IGuildUser) context.User).KickAsync();
                     await context.Channel.SendMessageAsync($":boot: {context.User.Mention} has been kicked for Advertisement :boot:");
-                    _logger.Info($"{context.User} has been kicked from {context.Guild.Id}");
+                    Logger.Info($"{context.User} has been kicked from {context.Guild.Id}");
                 }
                 catch (Exception e)
                 {
-                    _logger.Warn($"Unable to kick {context.User}. {e.Message}");
+                    Logger.Warn($"Unable to kick {context.User}. {e.Message}");
                 }
             }
         }

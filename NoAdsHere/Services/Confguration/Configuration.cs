@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Newtonsoft.Json;
 using System.IO;
 using NLog;
@@ -9,7 +8,7 @@ namespace NoAdsHere.Services.Confguration
 {
     public sealed class Config
     {
-        private static readonly Logger _logger = LogManager.GetLogger("Config");
+        private static readonly Logger Logger = LogManager.GetLogger("Config");
 
         private Config()
         {
@@ -56,7 +55,7 @@ namespace NoAdsHere.Services.Confguration
 
         public static Config Load()
         {
-            _logger.Info("Loading Configuration from config.json");
+            Logger.Info("Loading Configuration from config.json");
             if (File.Exists("config.json"))
             {
                 var json = File.ReadAllText("config.json");
@@ -69,7 +68,7 @@ namespace NoAdsHere.Services.Confguration
 
         public static Config LoadFrom(string path)
         {
-            _logger.Info($"Loading Configuration from {path}");
+            Logger.Info($"Loading Configuration from {path}");
             path = Path.Combine(path, "config.json");
             if (File.Exists(path))
             {
@@ -82,7 +81,7 @@ namespace NoAdsHere.Services.Confguration
 
         public void Save()
         {
-            _logger.Info("Saving Configuration to config.json");
+            Logger.Info("Saving Configuration to config.json");
             var json = JsonConvert.SerializeObject(this, Formatting.Indented);
             File.WriteAllText("config.json", json);
         }

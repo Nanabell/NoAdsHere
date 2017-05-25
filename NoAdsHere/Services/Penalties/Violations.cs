@@ -14,7 +14,7 @@ namespace NoAdsHere.Services.Penalties
     {
         private static DiscordSocketClient _client;
         private static MongoClient _mongo;
-        private static Logger _logger = LogManager.GetLogger("AntiAds");
+        private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
         public static Task Install(IServiceProvider provider)
         {
@@ -35,7 +35,7 @@ namespace NoAdsHere.Services.Penalties
             var collection = _mongo.GetCollection<Violator>(_client);
             violator.LatestViolation = DateTime.Now;
             violator.Points++;
-            _logger.Info($"Increased points for {context.User} by 1 for a total of {violator.Points}");
+            Logger.Info($"Increased points for {context.User} by 1 for a total of {violator.Points}");
             await collection.SaveAsync(violator);
             await ExecutePenalty(context, violator);
         }
@@ -46,27 +46,27 @@ namespace NoAdsHere.Services.Penalties
 
             if (violator.Points == setting.Penaltings.InfoMessage && setting.Penaltings.InfoMessage != 0)
             {
-                _logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for InfoMessage");
+                Logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for InfoMessage");
                 await InfoMessagePenalty.SendAsync(context);
             }
             else if (violator.Points == setting.Penaltings.WarnMessage && setting.Penaltings.WarnMessage != 0)
             {
-                _logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for WarnMessage");
+                Logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for WarnMessage");
                 await WarnMessagePenalty.SendAsync(context);
             }
             else if (violator.Points == setting.Penaltings.Kick && setting.Penaltings.Kick != 0)
             {
-                _logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for Kick");
+                Logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for Kick");
                 await KickPenalty.KickAsync(context);
             }
             else if (violator.Points >= setting.Penaltings.Ban && setting.Penaltings.Ban != 0)
             {
                 var collection = _mongo.GetCollection<Violator>(_client);
 
-                _logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for Ban");
+                Logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for Ban");
                 await BanPenalty.BanAsync(context);
                 await collection.DeleteAsync(violator);
-                _logger.Info($"Dropped Database Entry for {context.User}");
+                Logger.Info($"Dropped Database Entry for {context.User}");
             }
         }
 
@@ -93,7 +93,7 @@ namespace NoAdsHere.Services.Penalties
             {
                 var collection = _mongo.GetCollection<Violator>(_client);
                 violator.Points = (points < violator.Points ? violator.Points - points : 0);
-                _logger.Info($"Decreased Points for {context.User} by {points} for a total of {violator.Points}");
+                Logger.Info($"Decreased Points for {context.User} by {points} for a total of {violator.Points}");
                 await collection.SaveAsync(violator);
             }
         }

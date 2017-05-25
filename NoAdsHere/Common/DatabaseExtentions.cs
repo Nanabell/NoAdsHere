@@ -3,9 +3,6 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using NoAdsHere.Services;
 using NoAdsHere.Services.Penalties;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Common

@@ -10,7 +10,7 @@ namespace NoAdsHere.Services.Penalties
 {
     public static class BanPenalty
     {
-        private static Logger _logger = LogManager.GetLogger("AntiAds");
+        private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
         public static async Task BanAsync(ICommandContext context)
         {
@@ -25,11 +25,11 @@ namespace NoAdsHere.Services.Penalties
                         await context.Channel.SendMessageAsync($"<:banzy:316314495695716352> {context.User.Mention} has been banned for Advertisement <:banzy:316314495695716352>");
                     else
                         await context.Channel.SendMessageAsync($":no_entry: {context.User.Mention} has been banned for Advertisement :no_entry:");
-                    _logger.Info($"{context.User} has been banned from {context.Guild.Id}");
+                    Logger.Info($"{context.User} has been banned from {context.Guild.Id}");
                 }
                 catch (Exception e)
                 {
-                    _logger.Warn($"Unable to ban {context.User}. {e.Message}");
+                    Logger.Warn($"Unable to ban {context.User}. {e.Message}");
                 }
             }
         }
