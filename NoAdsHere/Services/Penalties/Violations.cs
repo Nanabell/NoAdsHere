@@ -6,6 +6,7 @@ using MongoDB.Driver;
 using NLog;
 using NoAdsHere.Common;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Services.Penalties
@@ -43,6 +44,7 @@ namespace NoAdsHere.Services.Penalties
         private static async Task ExecutePenalty(ICommandContext context, Violator violator)
         {
             var setting = await _mongo.GetCollection<GuildSetting>(_client).GetGuildAsync(violator.GuildId);
+            int[] penaltyLevels = new int[] { setting.Penaltings.InfoMessage, setting.Penaltings.WarnMessage, setting.Penaltings.Kick, setting.Penaltings.Ban };
 
             if (violator.Points == setting.Penaltings.InfoMessage && setting.Penaltings.InfoMessage != 0)
             {
@@ -59,14 +61,17 @@ namespace NoAdsHere.Services.Penalties
                 Logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for Kick");
                 await KickPenalty.KickAsync(context);
             }
-            else if (violator.Points >= setting.Penaltings.Ban && setting.Penaltings.Ban != 0)
+            else if (violator.Points == setting.Penaltings.Ban && setting.Penaltings.Ban != 0)
             {
-                var collection = _mongo.GetCollection<Violator>(_client);
-
                 Logger.Info($"{context.User} exceeded the limit ({setting.Penaltings.InfoMessage}) for Ban");
                 await BanPenalty.BanAsync(context);
+            }
+
+            if (violator.Points >= penaltyLevels.Max())
+            {
+                var collection = _mongo.GetCollection<Violator>(_client);
                 await collection.DeleteAsync(violator);
-                Logger.Info($"Dropped Database Entry for {context.User}");
+                Logger.Info($"User {context.User} reached the last Penalty dropping from Database");
             }
         }
 
