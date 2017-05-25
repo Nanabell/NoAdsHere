@@ -40,6 +40,7 @@ namespace NoAdsHere.Services.AntiAds
 
             var context = GetContext(message);
             if (context.Guild == null) return;
+            if (context.User.IsBot) return;
 
             if (_invite.IsMatch(context.Message.Content))
             {
