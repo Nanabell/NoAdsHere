@@ -1,8 +1,7 @@
-﻿using MongoDB.Bson;
-using NoAdsHere.Common;
-using System;
+﻿using System;
+using MongoDB.Bson;
 
-namespace NoAdsHere.Services.Penalties
+namespace NoAdsHere.Database.Models.Violator
 {
     public class Violator : IIndexed
     {

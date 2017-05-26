@@ -2,8 +2,6 @@
 using Discord.Commands;
 using NLog;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Services.Penalties
@@ -12,7 +10,7 @@ namespace NoAdsHere.Services.Penalties
     {
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
-        public static async Task KickAsync(ICommandContext context)
+        public static async Task KickAsync(ICommandContext context, string message = null)
         {
             var self = await context.Guild.GetCurrentUserAsync();
 
@@ -21,7 +19,7 @@ namespace NoAdsHere.Services.Penalties
                 try
                 {
                     await ((IGuildUser) context.User).KickAsync();
-                    await context.Channel.SendMessageAsync($":boot: {context.User.Mention} has been kicked for Advertisement :boot:");
+                    await context.Channel.SendMessageAsync($":boot: {context.User.Mention} {message ?? "has been kicked for Advertisement"} :boot:");
                     Logger.Info($"{context.User} has been kicked from {context.Guild.Id}");
                 }
                 catch (Exception e)

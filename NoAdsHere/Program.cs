@@ -2,13 +2,18 @@
 using System.Threading.Tasks;
 using Discord.WebSocket;
 using Discord;
-using NoAdsHere.Services.Confguration;
 using NLog;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using Discord.Commands;
 using NoAdsHere.Services.AntiAds;
+using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.Penalties;
+using NoAdsHere.Services.Violations;
+using NoAdsHere.Database;
+using NoAdsHere.Database.Models.GuildSettings;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace NoAdsHere
 {
@@ -23,6 +28,8 @@ namespace NoAdsHere
         private CommandHandler _handler;
         private readonly Logger _logger = LogManager.GetLogger("Core");
         private readonly Logger _discordLogger = LogManager.GetLogger("Discord");
+        private readonly bool ReadyExecuted = false;
+        private IServiceProvider provider;
 
         public async Task RunAsync()
         {
@@ -37,30 +44,70 @@ namespace NoAdsHere
             });
 
             _client.Log += ClientLogger;
+            _client.Ready += Ready;
+            _client.JoinedGuild += JoinedGuild;
 
             _config = Config.Load();
             _mongo = CreateDatabaseConnection();
 
-            var serviceProvider = ConfigureServices();
+            provider = ConfigureServices();
 
             await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();
 
-            _handler = new CommandHandler(serviceProvider);
-            await _handler.ConfigureAsync();
-
-            await Violations.Install(serviceProvider);
-
-            var inviteChecker = new DiscordInvites(serviceProvider);
-            await inviteChecker.StartService();
-
-            var youtubeChecker = new Youtube(serviceProvider);
-            await youtubeChecker.StartService();
-
-            var twitchChecker = new Twitch(serviceProvider);
-            await twitchChecker.StartService();
-
             await Task.Delay(-1);
+        }
+
+        private async Task Ready()
+        {
+            if (!ReadyExecuted)
+            {
+                await Task.Delay(500);
+                _handler = new CommandHandler(provider);
+                await _handler.ConfigureAsync();
+
+                await Violations.Install(provider);
+
+                var inviteChecker = new DiscordInvites(provider);
+                await inviteChecker.StartService();
+
+                var youtubeChecker = new Youtube(provider);
+                await youtubeChecker.StartService();
+
+                var twitchChecker = new Twitch(provider);
+                await twitchChecker.StartService();
+            }
+        }
+
+        private async Task JoinedGuild(SocketGuild guild)
+        {
+            var collection = _mongo.GetCollection<Penalty>(_client);
+            var penalties = await collection.GetPenaltiesAsync(guild.Id);
+            var newPenalties = new List<Penalty>();
+
+            if (penalties.All(p => p.PenaltyId != 1))
+            {
+                newPenalties.Add(new Penalty(guild.Id, 1, PenaltyTypes.InfoMessage, 1));
+                _logger.Info("Adding default InfoMessage Penalty");
+            }
+            if (penalties.All(p => p.PenaltyId != 2))
+            {
+                newPenalties.Add(new Penalty(guild.Id, 2, PenaltyTypes.WarnMessage, 3));
+                _logger.Info("Adding default WarnMessage Penalty");
+            }
+            if (penalties.All(p => p.PenaltyId != 3))
+            {
+                newPenalties.Add(new Penalty(guild.Id, 3, PenaltyTypes.Kick, 5));
+                _logger.Info("Adding default Kick Penalty");
+            }
+            if (penalties.All(p => p.PenaltyId != 4))
+            {
+                newPenalties.Add(new Penalty(guild.Id, 4, PenaltyTypes.Ban, 6));
+                _logger.Info("Adding default Ban Penalty");
+            }
+
+            if (newPenalties.Any())
+                await collection.InsertManyAsync(newPenalties);
         }
 
         private MongoClient CreateDatabaseConnection()

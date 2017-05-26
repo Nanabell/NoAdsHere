@@ -1,7 +1,6 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using NLog;
-using NoAdsHere.Services.Confguration;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,6 +10,7 @@ using System.Threading.Tasks;
 using Discord;
 using System.Linq;
 using NoAdsHere.Common;
+using NoAdsHere.Services.Configuration;
 
 namespace NoAdsHere
 {

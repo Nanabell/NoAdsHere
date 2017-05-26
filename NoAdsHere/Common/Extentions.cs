@@ -1,4 +1,7 @@
-﻿using Discord;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Discord;
+using NoAdsHere.Database.Models.GuildSettings;
 
 namespace NoAdsHere.Common
 {
@@ -13,5 +16,8 @@ namespace NoAdsHere.Common
 
             return perms.Has(permission);
         }
+        
+        public static IEnumerable<Ignore> GetIgnoreType(this IEnumerable<Ignore> ignores, IgnoreTypes type)
+            => ignores.Where(i => i.IgnoreType == type || i.IgnoreType == IgnoreTypes.All);
     }
 }

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 using System.IO;
+using Newtonsoft.Json;
 using NLog;
 
-namespace NoAdsHere.Services.Confguration
+namespace NoAdsHere.Services.Configuration
 {
     public sealed class Config
     {

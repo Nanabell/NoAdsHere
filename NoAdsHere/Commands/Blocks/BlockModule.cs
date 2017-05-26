@@ -4,11 +4,12 @@ using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
-using NoAdsHere.Common;
-using NoAdsHere.Services;
+using NoAdsHere.Database;
+using NoAdsHere.Database.Models.GuildSettings;
 
 namespace NoAdsHere.Commands.Blocks
 {
+    [Name("Blocks"), Group("Blocks")]
     public class BlockModule : ModuleBase
     {
         private readonly MongoClient _mongo;
@@ -23,13 +24,13 @@ namespace NoAdsHere.Commands.Blocks
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Invites(bool setting)
         {
-            var collection = _mongo.GetCollection<GuildSetting>(Context.Client);
-            var guildSetting = await collection.GetGuildAsync(Context.Guild.Id);
+            var collection = _mongo.GetCollection<Block>(Context.Client);
+            var inviteBlock = await collection.GetBlockAsync(Context.Guild.Id, BlockTypes.Invites);
 
-            if (guildSetting.Blockings.Invites != setting)
+            if (inviteBlock.IsEnabled != setting)
             {
-                guildSetting.Blockings.Invites = setting;
-                await collection.SaveAsync(guildSetting);
+                inviteBlock.IsEnabled = setting;
+                await collection.SaveAsync(inviteBlock);
                 await ReplyAsync($":white_check_mark: Discord Invite Blockings have been set to {setting}. {(setting ? "Please ensure that the bot can ManageMessages in the required channels" : "")} :white_check_mark:");
             }
             else
@@ -43,13 +44,13 @@ namespace NoAdsHere.Commands.Blocks
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Youtube(bool setting)
         {
-            var collection = _mongo.GetCollection<GuildSetting>(Context.Client);
-            var guildSetting = await collection.GetGuildAsync(Context.Guild.Id);
+            var collection = _mongo.GetCollection<Block>(Context.Client);
+            var youtubeBlock = await collection.GetBlockAsync(Context.Guild.Id, BlockTypes.Youtube);
 
-            if (guildSetting.Blockings.Youtube != setting)
+            if (youtubeBlock.IsEnabled != setting)
             {
-                guildSetting.Blockings.Youtube = setting;
-                await collection.SaveAsync(guildSetting);
+                youtubeBlock.IsEnabled = setting;
+                await collection.SaveAsync(youtubeBlock);
                 await ReplyAsync($":white_check_mark: Youtube Blocks have been set to {setting}. {(setting ? "Please ensure that the bot can ManageMessages in the required channels" : "")} :white_check_mark:");
             }
             else
@@ -63,13 +64,13 @@ namespace NoAdsHere.Commands.Blocks
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Twitch(bool setting)
         {
-            var collection = _mongo.GetCollection<GuildSetting>(Context.Client);
-            var guildSetting = await collection.GetGuildAsync(Context.Guild.Id);
+            var collection = _mongo.GetCollection<Block>(Context.Client);
+            var twitchBlock = await collection.GetBlockAsync(Context.Guild.Id, BlockTypes.Twitch);
 
-            if (guildSetting.Blockings.Twitch != setting)
+            if (twitchBlock.IsEnabled != setting)
             {
-                guildSetting.Blockings.Twitch = setting;
-                await collection.SaveAsync(guildSetting);
+                twitchBlock.IsEnabled = setting;
+                await collection.SaveAsync(twitchBlock);
                 await ReplyAsync($":white_check_mark: Twitch Blocks have been set to {setting}. {(setting ? "Please ensure that the bot can ManageMessages in the required channels" : "")} :white_check_mark:");
             }
             else
