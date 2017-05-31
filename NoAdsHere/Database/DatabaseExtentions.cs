@@ -5,6 +5,9 @@ using MongoDB.Driver;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
 using System.Collections.Generic;
+using NoAdsHere.Common;
+using NoAdsHere.Database.Models.Settings;
+using NoAdsHere.Services.AntiAds;
 
 namespace NoAdsHere.Database
 {
@@ -54,8 +57,8 @@ namespace NoAdsHere.Database
 
             return result;
         }
-        
-        public static async Task<Block> GetBlockAsync(this IMongoCollection<Block> collection, ulong guildId, BlockTypes type)
+
+        public static async Task<Block> GetBlockAsync(this IMongoCollection<Block> collection, ulong guildId, BlockType type)
         {
             var cursor = await collection.FindAsync(f => f.GuildId == guildId && f.BlockType == type);
             var result = await cursor.SingleOrDefaultAsync();
@@ -67,14 +70,16 @@ namespace NoAdsHere.Database
             var result2 = await cursor2.SingleOrDefaultAsync();
             return result2;
         }
-        
-        public static async Task<List<Ignore>> GetIgnoresAsync(this IMongoCollection<Ignore> collection, ulong guildId, IgnoreingTypes type)
+
+        public static async Task<List<Block>> GetBlocksAsync(this IMongoCollection<Block> collection)
         {
-            IAsyncCursor<Ignore> cursor;
-            if (type == IgnoreingTypes.Disabled)
-                cursor = await collection.FindAsync(f => f.GuildId == guildId && (f.IgnoreingType == type));
-            else
-                cursor = await collection.FindAsync(f => f.GuildId == guildId && (f.IgnoreingType == type || f.IgnoreingType == IgnoreingTypes.All));
+            var cursor = await collection.FindAsync("{}");
+            return await cursor.ToListAsync();
+        }
+
+        public static async Task<List<Ignore>> GetIgnoresAsync(this IMongoCollection<Ignore> collection, ulong guildId, BlockType type)
+        {
+            var cursor = await collection.FindAsync(f => f.GuildId == guildId && (f.BlockType == type || f.BlockType == BlockType.All));
             var result = await cursor.ToListAsync();
 
             return result ?? new List<Ignore>(0);
@@ -86,7 +91,7 @@ namespace NoAdsHere.Database
             var result = await cursor.SingleOrDefaultAsync();
             return result;
         }
-        
+
         public static async Task<List<Penalty>> GetPenaltiesAsync(this IMongoCollection<Penalty> collection, ulong guildId)
         {
             var cursor = await collection.FindAsync(f => f.GuildId == guildId);
@@ -105,6 +110,12 @@ namespace NoAdsHere.Database
             var cursor2 = await collection.FindAsync(f => f.GuildId == user.Guild.Id && f.UserId == user.Id);
             var result2 = await cursor2.SingleOrDefaultAsync();
             return result2;
+        }
+
+        public static async Task<List<Master>> GetMastersAsync(this IMongoCollection<Master> collection)
+        {
+            var cursor = await collection.FindAsync("{}");
+            return await cursor.ToListAsync();
         }
     }
 }

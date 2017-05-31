@@ -14,6 +14,7 @@ using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using System.Linq;
 using System.Collections.Generic;
+using NoAdsHere.Common;
 
 namespace NoAdsHere
 {
@@ -68,14 +69,8 @@ namespace NoAdsHere
 
                 await Violations.Install(provider);
 
-                var inviteChecker = new DiscordInvites(provider);
-                await inviteChecker.StartService();
-
-                var youtubeChecker = new Youtube(provider);
-                await youtubeChecker.StartService();
-
-                var twitchChecker = new Twitch(provider);
-                await twitchChecker.StartService();
+                await AntiAds.Install(provider);
+                await AntiAds.StartServiceAsync();
             }
         }
 
@@ -87,22 +82,22 @@ namespace NoAdsHere
 
             if (penalties.All(p => p.PenaltyId != 1))
             {
-                newPenalties.Add(new Penalty(guild.Id, 1, PenaltyTypes.InfoMessage, 1));
+                newPenalties.Add(new Penalty(guild.Id, 1, PenaltyType.Nothing, 1));
                 _logger.Info("Adding default InfoMessage Penalty");
             }
             if (penalties.All(p => p.PenaltyId != 2))
             {
-                newPenalties.Add(new Penalty(guild.Id, 2, PenaltyTypes.WarnMessage, 3));
+                newPenalties.Add(new Penalty(guild.Id, 2, PenaltyType.Warn, 3));
                 _logger.Info("Adding default WarnMessage Penalty");
             }
             if (penalties.All(p => p.PenaltyId != 3))
             {
-                newPenalties.Add(new Penalty(guild.Id, 3, PenaltyTypes.Kick, 5));
+                newPenalties.Add(new Penalty(guild.Id, 3, PenaltyType.Kick, 5));
                 _logger.Info("Adding default Kick Penalty");
             }
             if (penalties.All(p => p.PenaltyId != 4))
             {
-                newPenalties.Add(new Penalty(guild.Id, 4, PenaltyTypes.Ban, 6));
+                newPenalties.Add(new Penalty(guild.Id, 4, PenaltyType.Ban, 6));
                 _logger.Info("Adding default Ban Penalty");
             }
 

@@ -10,7 +10,7 @@ namespace NoAdsHere.Services.Penalties
     {
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
-        public static async Task KickAsync(ICommandContext context, string message = null)
+        public static async Task KickAsync(ICommandContext context, string message, string trigger, string emote = "<:discordPolice:318388314422116362>", bool autoDelete = false)
         {
             var self = await context.Guild.GetCurrentUserAsync();
 
@@ -18,9 +18,25 @@ namespace NoAdsHere.Services.Penalties
             {
                 try
                 {
-                    await ((IGuildUser) context.User).KickAsync();
-                    await context.Channel.SendMessageAsync($":boot: {context.User.Mention} {message ?? "has been kicked for Advertisement"} :boot:");
+                    await ((IGuildUser)context.User).KickAsync();
+                    IUserMessage msg = null;
+                    if (self.GuildPermissions.UseExternalEmojis)
+                        msg = await context.Channel.SendMessageAsync($"{emote} {context.User.Mention} {message}! Trigger: {trigger} {emote}");
+                    else
+                        msg = await context.Channel.SendMessageAsync($":boot: {context.User.Mention} {message}! Trigger: {trigger} :boot:");
                     Logger.Info($"{context.User} has been kicked from {context.Guild.Id}");
+
+                    if (msg != null)
+                    {
+                        if (autoDelete)
+                        {
+                            var _ = Task.Run(async () =>
+                            {
+                                await Task.Delay(7000);
+                                await msg.DeleteAsync();
+                            });
+                        }
+                    }
                 }
                 catch (Exception e)
                 {

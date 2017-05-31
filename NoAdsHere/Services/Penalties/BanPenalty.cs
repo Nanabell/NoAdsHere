@@ -1,4 +1,5 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using NLog;
 using System;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ namespace NoAdsHere.Services.Penalties
     {
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
-        public static async Task BanAsync(ICommandContext context, string message = null)
+        public static async Task BanAsync(ICommandContext context, string message, string trigger, string emote = "<:banzy:316314495695716352>", bool autoDelete = false)
         {
             var self = await context.Guild.GetCurrentUserAsync();
 
@@ -18,11 +19,24 @@ namespace NoAdsHere.Services.Penalties
                 try
                 {
                     await context.Guild.AddBanAsync(context.User);
+                    IUserMessage msg = null;
                     if (self.GuildPermissions.UseExternalEmojis)
-                        await context.Channel.SendMessageAsync($"<:banzy:316314495695716352> {context.User.Mention} {message ?? "has been banned for Advertisement"} <:banzy:316314495695716352>");
+                        msg = await context.Channel.SendMessageAsync($"<:banzy:316314495695716352> {context.User.Mention} {message}! Trigger: {trigger} <:banzy:316314495695716352>");
                     else
-                        await context.Channel.SendMessageAsync($":no_entry: {context.User.Mention} {context.User.Mention} {message ?? "has been banned for Advertisement"} :no_entry:");
+                        msg = await context.Channel.SendMessageAsync($":no_entry: {context.User.Mention} {message}! Trigger: {trigger} :no_entry:");
                     Logger.Info($"{context.User} has been banned from {context.Guild.Id}");
+
+                    if (msg != null)
+                    {
+                        if (autoDelete)
+                        {
+                            var _ = Task.Run(async () =>
+                            {
+                                await Task.Delay(7000);
+                                await msg.DeleteAsync();
+                            });
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
