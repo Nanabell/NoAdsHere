@@ -25,7 +25,7 @@ namespace NoAdsHere.Services.Penalties
                 .Build();
 
             var trigger = TriggerBuilder.Create()
-                .StartAt(DateTimeOffset.Now.AddSeconds(10))
+                .StartAt(DateTimeOffset.Now.AddHours(1))
                 .ForJob(job)
                 .Build();
             trigger.JobDataMap["message"] = message;
