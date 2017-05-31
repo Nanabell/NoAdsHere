@@ -15,6 +15,8 @@ using NoAdsHere.Database.Models.GuildSettings;
 using System.Linq;
 using System.Collections.Generic;
 using NoAdsHere.Common;
+using Quartz;
+using Quartz.Impl;
 
 namespace NoAdsHere
 {
@@ -31,6 +33,7 @@ namespace NoAdsHere
         private readonly Logger _discordLogger = LogManager.GetLogger("Discord");
         private readonly bool ReadyExecuted = false;
         private IServiceProvider provider;
+        private IScheduler _scheduler;
 
         public async Task RunAsync()
         {
@@ -50,6 +53,7 @@ namespace NoAdsHere
 
             _config = Config.Load();
             _mongo = CreateDatabaseConnection();
+            _scheduler = await StartQuartz();
 
             provider = ConfigureServices();
 
@@ -71,6 +75,8 @@ namespace NoAdsHere
 
                 await AntiAds.Install(provider);
                 await AntiAds.StartServiceAsync();
+
+                await JobQueue.Install(provider);
             }
         }
 
@@ -105,6 +111,14 @@ namespace NoAdsHere
                 await collection.InsertManyAsync(newPenalties);
         }
 
+        private async Task<IScheduler> StartQuartz()
+        {
+            StdSchedulerFactory factory = new StdSchedulerFactory();
+            var scheduler = await factory.GetScheduler();
+            await scheduler.Start();
+            return scheduler;
+        }
+
         private MongoClient CreateDatabaseConnection()
         {
             _logger.Info("Connecting to MongoDb Database");
@@ -118,6 +132,7 @@ namespace NoAdsHere
                 .AddSingleton(_client)
                 .AddSingleton(_config)
                 .AddSingleton(_mongo)
+                .AddSingleton(_scheduler)
                 .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false, LogLevel = LogSeverity.Verbose }));
 
             var provider = servies.BuildServiceProvider();
