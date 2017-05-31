@@ -23,6 +23,7 @@ namespace NoAdsHere.Commands.Settings
         public async Task Settings()
         {
             //TODO: Redo this
+            await Task.CompletedTask;
         }
     }
 }
