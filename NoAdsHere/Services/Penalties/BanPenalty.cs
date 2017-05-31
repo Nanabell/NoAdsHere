@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using NLog;
+using Quartz;
 using System;
 using System.Threading.Tasks;
 
@@ -30,11 +31,7 @@ namespace NoAdsHere.Services.Penalties
                     {
                         if (autoDelete)
                         {
-                            var _ = Task.Run(async () =>
-                            {
-                                await Task.Delay(7000);
-                                await msg.DeleteAsync();
-                            });
+                            await JobQueue.QueueTrigger(msg);
                         }
                     }
                 }
