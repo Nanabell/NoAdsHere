@@ -4,14 +4,15 @@
     <TargetFramework>netcoreapp1.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="1.0.0-rc3-00744" />
-    <PackageReference Include="Discord.Net.Commands" Version="1.0.0-rc3-00744" />
-    <PackageReference Include="Discord.Net.Core" Version="1.0.0-rc3-00744" />
-    <PackageReference Include="Discord.Net.Rest" Version="1.0.0-rc3-00744" />
-    <PackageReference Include="Discord.Net.Rpc" Version="1.0.0-rc3-00744" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="1.0.0-rc3-00744" />
+    <PackageReference Include="Discord.Net" Version="1.0.0-rc3-00746" />
+    <PackageReference Include="Discord.Net.Commands" Version="1.0.0-rc3-00746" />
+    <PackageReference Include="Discord.Net.Core" Version="1.0.0-rc3-00746" />
+    <PackageReference Include="Discord.Net.Rest" Version="1.0.0-rc3-00746" />
+    <PackageReference Include="Discord.Net.Rpc" Version="1.0.0-rc3-00746" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="1.0.0-rc3-00746" />
     <PackageReference Include="MongoDB.Driver" Version="2.4.3" />
     <PackageReference Include="NLog" Version="5.0.0-beta07" />
+    <PackageReference Include="Quartz" Version="3.0.0-alpha2" />
   </ItemGroup>
   <ItemGroup>
     <None Update="NLog.config">
