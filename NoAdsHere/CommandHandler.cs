@@ -57,7 +57,7 @@ namespace NoAdsHere
             var message = pMsg as SocketUserMessage;
             if (message == null) return;
 
-            int argPos = 0;
+            var argPos = 0;
             if (!ParseTriggers(message, ref argPos)) return;
 
             var context = new SocketCommandContext(_client, message);
@@ -72,7 +72,8 @@ namespace NoAdsHere
             string response = null;
             switch (result)
             {
-                case SearchResult _:
+                case SearchResult searchResult:
+                    _logger.Debug($"SearchResult: {searchResult.ErrorReason}");
                     break;
 
                 case ParseResult parseResult:
@@ -86,6 +87,10 @@ namespace NoAdsHere
                 case ExecuteResult executeResult:
                     response = $":warning: Your command failed to execute. If this persists, contact the Bot Developer.\n`{executeResult.Exception.Message}`";
                     _logger.Error(executeResult.Exception);
+                    break;
+
+                default:
+                    _logger.Debug($"Unknown Result Type: {result?.Error}");
                     break;
             }
 
