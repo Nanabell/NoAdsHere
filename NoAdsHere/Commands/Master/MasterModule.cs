@@ -10,7 +10,7 @@ namespace NoAdsHere.Commands.Master
     {
         [Command("Reset Guild")]
         [RequirePermission(AccessLevel.Master)]
-        public async Task Reset(IGuild guild)
+        public async Task Reset(ulong guildId)
         {
             await Task.CompletedTask;
         }
