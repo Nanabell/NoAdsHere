@@ -17,7 +17,7 @@ namespace NoAdsHere.Common
             return perms.Has(permission);
         }
         
-        public static IEnumerable<Ignore> GetIgnoreType(this IEnumerable<Ignore> ignores, IgnoreTypes type)
-            => ignores.Where(i => i.IgnoreType == type || i.IgnoreType == IgnoreTypes.All);
+        public static IEnumerable<Ignore> GetIgnoreType(this IEnumerable<Ignore> ignores, IgnoreType type)
+            => ignores.Where(i => i.IgnoreType == type || i.IgnoreType == IgnoreType.All);
     }
 }
