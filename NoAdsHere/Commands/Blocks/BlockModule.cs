@@ -1,11 +1,5 @@
-using System;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
-using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
-using NoAdsHere.Database;
-using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Services.AntiAds;
@@ -15,14 +9,7 @@ namespace NoAdsHere.Commands.Blocks
     [Name("Blocks"), Group("Blocks")]
     public class BlockModule : ModuleBase
     {
-        private readonly MongoClient _mongo;
-
-        public BlockModule(IServiceProvider provider)
-        {
-            _mongo = provider.GetService<MongoClient>();
-        }
-
-        [Command("Invites"), Alias("Invite")]
+        [Command("Invite")]
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task Invites(bool setting)
         {
