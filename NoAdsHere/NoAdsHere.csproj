@@ -19,7 +19,4 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Commands\Ignore\" />
-  </ItemGroup>
 </Project>
