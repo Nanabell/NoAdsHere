@@ -55,7 +55,7 @@ namespace NoAdsHere.Services.Configuration
 
         public static Config Load()
         {
-            Logger.Info("Loading Configuration from config.json");
+            Logger.Info("Loading configuration from config.json");
             if (File.Exists("config.json"))
             {
                 var json = File.ReadAllText("config.json");
@@ -63,12 +63,12 @@ namespace NoAdsHere.Services.Configuration
             }
             var config = new Config();
             config.Save();
-            throw new InvalidOperationException("configuration file created; insert token and restart.");
+            throw new InvalidOperationException("Configuration file created; insert token and restart.");
         }
 
         public static Config LoadFrom(string path)
         {
-            Logger.Info($"Loading Configuration from {path}");
+            Logger.Info($"Loading configuration from {path}");
             path = Path.Combine(path, "config.json");
             if (File.Exists(path))
             {
@@ -76,12 +76,12 @@ namespace NoAdsHere.Services.Configuration
                 return JsonConvert.DeserializeObject<Config>(json);
             }
             else
-                throw new FileNotFoundException("Config needs to be present!");
+                throw new FileNotFoundException("Configuration file needs to be present!");
         }
 
         public void Save()
         {
-            Logger.Info("Saving Configuration to config.json");
+            Logger.Info("Saving configuration to config.json");
             var json = JsonConvert.SerializeObject(this, Formatting.Indented);
             File.WriteAllText("config.json", json);
         }

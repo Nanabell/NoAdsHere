@@ -41,9 +41,9 @@ namespace NoAdsHere.Commands.Penalties
             await collection.InsertOneAsync(newPenalty);
 
             if (at == 0)
-                await ReplyAsync($":white_check_mark: Penalty {type}`(id: {penaltyCount + 1})` added but Disabled :white_check_mark:");
+                await ReplyAsync($":white_check_mark: Penalty {type}`(ID: {penaltyCount + 1})` has been added but is disabled. :white_check_mark:");
             else
-                await ReplyAsync($":white_check_mark: Penalty {type}`(id: {penaltyCount + 1})` added with {at} Required Points :white_check_mark:");
+                await ReplyAsync($":white_check_mark: Penalty {type}`(id: {penaltyCount + 1})` has been added with {at} required points :white_check_mark:");
         }
 
         [Command("Remove")]
@@ -60,7 +60,7 @@ namespace NoAdsHere.Commands.Penalties
             }
             else
             {
-                await ReplyAsync($"Penalty with id {penaltyId} not existent!");
+                await ReplyAsync($"Penalty with ID {penaltyId} does not exist!");
             }
         }
 
@@ -95,7 +95,7 @@ namespace NoAdsHere.Commands.Penalties
             }
             await Restore(_mongo, Context.Client as DiscordSocketClient, Context.Guild as SocketGuild);
 
-            await ReplyAsync("Penalties have been restored to default");
+            await ReplyAsync("Penalties have been restored to default.");
         }
 
         private static PenaltyType PenaltyParser(string type)

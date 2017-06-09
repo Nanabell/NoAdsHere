@@ -21,7 +21,7 @@ namespace NoAdsHere.Database
         ulong GuildId { get; set; }
     }
 
-    public static class DatabaseExtentions
+    public static class DatabaseExtensions
     {
         public static IMongoCollection<T> GetCollection<T>(this MongoClient mongo, IDiscordClient client)
         {

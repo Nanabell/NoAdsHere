@@ -52,7 +52,7 @@ namespace NoAdsHere.Services.Violations
             foreach (var penalty in penalties.OrderBy(p => p.RequiredPoints))
             {
                 if (violator.Points != penalty.RequiredPoints) continue;
-                const string defaultMessage = "Advertisement is not allowed in this Server";
+                const string defaultMessage = "Advertisements is not allowed in this server!";
                 var message = penalty.Message ?? defaultMessage;
                 switch (penalty.PenaltyType)
                 {
@@ -91,7 +91,7 @@ namespace NoAdsHere.Services.Violations
             {
                 var collection = _mongo.GetCollection<Violator>(_client);
                 await collection.DeleteAsync(violator);
-                Logger.Info($"User {context.User} reached the last Penalty dropping from Database");
+                Logger.Info($"User {context.User} reached the last penalty dropping from Database.");
             }
         }
 
@@ -112,10 +112,10 @@ namespace NoAdsHere.Services.Violations
                     return "Message contained a Twitch Clip.";
 
                 case BlockType.YoutubeLink:
-                    return "Message contained a Youtube Link.";
+                    return "Message contained a YouTube Link.";
 
                 case BlockType.All:
-                    return "[Error] this Message should never appear!";
+                    return "[Error] This Message should never appear!";
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(blockType), blockType, null);
@@ -145,7 +145,7 @@ namespace NoAdsHere.Services.Violations
             {
                 var collection = _mongo.GetCollection<Violator>(_client);
                 violator.Points = (points < violator.Points ? violator.Points - points : 0);
-                Logger.Info($"Decreased Points for {context.User} by {points} for a total of {violator.Points}");
+                Logger.Info($"Decreased points for {context.User} by {points} for a total of {violator.Points}");
                 await collection.SaveAsync(violator);
             }
         }

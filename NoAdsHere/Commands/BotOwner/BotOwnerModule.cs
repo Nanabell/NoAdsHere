@@ -25,7 +25,7 @@ namespace NoAdsHere.Commands.BotOwner
             await Task.CompletedTask;
         }
 
-        [Command("Reset all Guilds")]
+        [Command("Reset all guilds.")]
         [RequireOwner]
         public async Task Reset()
         {
@@ -39,7 +39,7 @@ namespace NoAdsHere.Commands.BotOwner
                 await PenaltyModule.Restore(_mongo, Context.Client as DiscordSocketClient, guild as SocketGuild);
 
             }
-            await ReplyAsync($"{counter} Guilds have been resetted");
+            await ReplyAsync($"{counter} guilds have been reset.");
         
         }
     }

@@ -24,7 +24,7 @@ namespace NoAdsHere.Services.Penalties
                         msg = await context.Channel.SendMessageAsync($"{emote} {context.User.Mention} {message}! Trigger: {trigger} {emote}");
                     else
                         msg = await context.Channel.SendMessageAsync($":boot: {context.User.Mention} {message}! Trigger: {trigger} :boot:");
-                    Logger.Info($"{context.User} has been kicked from {context.Guild.Id}");
+                    Logger.Info($"{context.User.Username} has been kicked from {context.Guild.Id}.");
 
                     if (msg != null)
                     {

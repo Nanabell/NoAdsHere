@@ -89,22 +89,22 @@ namespace NoAdsHere
             if (penalties.All(p => p.PenaltyId != 1))
             {
                 newPenalties.Add(new Penalty(guild.Id, 1, PenaltyType.Nothing, 1));
-                _logger.Info("Adding default InfoMessage Penalty");
+                _logger.Info("Adding default info message penalty.");
             }
             if (penalties.All(p => p.PenaltyId != 2))
             {
                 newPenalties.Add(new Penalty(guild.Id, 2, PenaltyType.Warn, 3));
-                _logger.Info("Adding default WarnMessage Penalty");
+                _logger.Info("Adding default warn message penalty.");
             }
             if (penalties.All(p => p.PenaltyId != 3))
             {
                 newPenalties.Add(new Penalty(guild.Id, 3, PenaltyType.Kick, 5));
-                _logger.Info("Adding default Kick Penalty");
+                _logger.Info("Adding default kick penalty.");
             }
             if (penalties.All(p => p.PenaltyId != 4))
             {
                 newPenalties.Add(new Penalty(guild.Id, 4, PenaltyType.Ban, 6));
-                _logger.Info("Adding default Ban Penalty");
+                _logger.Info("Adding default ban penalty.");
             }
 
             if (newPenalties.Any())
@@ -121,13 +121,13 @@ namespace NoAdsHere
 
         private MongoClient CreateDatabaseConnection()
         {
-            _logger.Info("Connecting to MongoDb Database");
+            _logger.Info("Connecting to Mongo Database");
             return new MongoClient(_config.Database.ConnectionString);
         }
 
         private IServiceProvider ConfigureServices()
         {
-            _logger.Info("Configuring ServiceDependencyMap");
+            _logger.Info("Configuring dependency injection and services...");
             var servies = new ServiceCollection()
                 .AddSingleton(_client)
                 .AddSingleton(_config)
