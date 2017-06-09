@@ -18,7 +18,7 @@ namespace NoAdsHere.Services.Penalties
             IUserMessage msg = null;
             if (context.Channel.CheckChannelPermission(ChannelPermission.SendMessages, await context.Guild.GetCurrentUserAsync()))
                 msg = await context.Channel.SendMessageAsync($"{emote} {context.User.Mention} {message}! Trigger: {trigger} {emote}");
-            else Logger.Warn("Unable to send NothingPenalty Message due to missing Permission");
+            else Logger.Warn("Unable to send nothing penalty message due to missing permissions!");
 
             if (msg != null)
             {

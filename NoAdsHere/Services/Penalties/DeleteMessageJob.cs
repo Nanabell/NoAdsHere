@@ -50,7 +50,7 @@ namespace NoAdsHere.Services.Penalties
             }
             catch (Exception e)
             {
-                _logger.Warn(e, $"Unable to delete Message {message.Id}.");
+                _logger.Warn(e, $"Unable to delete message with ID: {message.Id}.");
             }
         }
     }

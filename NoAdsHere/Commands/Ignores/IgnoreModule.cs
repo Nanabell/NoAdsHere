@@ -37,11 +37,11 @@ namespace NoAdsHere.Commands.Ignores
                     user.Id, blockType);
                 await collection.InsertOneAsync(userIgnore);
                 await ReplyAsync(
-                    $":white_check_mark: User {user}`({user.Id})` will now be Ignored for Invites :white_check_mark:");
+                    $":white_check_mark: User {user}`(ID: {user.Id})` will now be whitelisted for invites. :white_check_mark:");
             }
             else
             {
-                await ReplyAsync(":exclamation: User already Ignored :exclamation:");
+                await ReplyAsync(":exclamation: User is already whitelisted! :exclamation:");
             }
         }
 
@@ -60,11 +60,11 @@ namespace NoAdsHere.Commands.Ignores
                     role.Id, blockType);
                 await collection.InsertOneAsync(roleIgnore);
                 await ReplyAsync(
-                    $":white_check_mark: User {role}`({role.Id})` will now be Ignored for Invites :white_check_mark:");
+                    $":white_check_mark: Role {role}`(ID: {role.Id})` will now be whitelisted for invites :white_check_mark:");
             }
             else
             {
-                await ReplyAsync(":exclamation: Role already Ignored :exclamation:");
+                await ReplyAsync(":exclamation: Role is already whitelisted. :exclamation:");
             }
         }
 
@@ -83,11 +83,11 @@ namespace NoAdsHere.Commands.Ignores
                     channel.Id, blockType);
                 await collection.InsertOneAsync(channelIgnore);
                 await ReplyAsync(
-                    $":white_check_mark: User {channel}`({channel.Id})` will now be Ignored for Invites :white_check_mark:");
+                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will now be whitelisted for invites :white_check_mark:");
             }
             else
             {
-                await ReplyAsync(":exclamation: Channel already Ignored :exclamation:");
+                await ReplyAsync(":exclamation: Channel is already whitelisted. :exclamation:");
             }
         }
 
@@ -106,11 +106,11 @@ namespace NoAdsHere.Commands.Ignores
             {
                 await collection.DeleteAsync(first);
                 await ReplyAsync(
-                    $":white_check_mark: User {user}`({user.Id})` will no longer be Ignored for Invites :white_check_mark:");
+                    $":white_check_mark: User {user}`(ID: {user.Id})` will no longer be whitelisted for invites. :white_check_mark:");
             }
             else
             {
-                await ReplyAsync(":exclamation: User not Ignored :exclamation:");
+                await ReplyAsync(":exclamation: User is not whitelisted. :exclamation:");
             }
         }
 
@@ -129,11 +129,11 @@ namespace NoAdsHere.Commands.Ignores
             {
                 await collection.DeleteAsync(first);
                 await ReplyAsync(
-                    $":white_check_mark: Role {role}`({role.Id})` will no longer be Ignored for Invites :white_check_mark:");
+                    $":white_check_mark: Role {role}`(ID: {role.Id})` will no longer be whitelisted for invites :white_check_mark:");
             }
             else
             {
-                await ReplyAsync(":exclamation: Role not Ignored :exclamation:");
+                await ReplyAsync(":exclamation: Role is not already whitelisted. :exclamation:");
             }
         }
 
@@ -152,11 +152,11 @@ namespace NoAdsHere.Commands.Ignores
             {
                 await collection.DeleteAsync(first);
                 await ReplyAsync(
-                    $":white_check_mark: Channel {channel}`({channel.Id})` will no longer be Ignored for Invites :white_check_mark:");
+                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will no longer be whitelisted for invites :white_check_mark:");
             }
             else
             {
-                await ReplyAsync(":exclamation: Channel not Ignored :exclamation:");
+                await ReplyAsync(":exclamation: Channel is not already whitelisted :exclamation:");
             }
         }
 

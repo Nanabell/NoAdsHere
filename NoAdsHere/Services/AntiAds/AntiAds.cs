@@ -49,7 +49,7 @@ namespace NoAdsHere.Services.AntiAds
         public static async Task StartServiceAsync()
         {
             await LoadActiveGuildsAsync();
-            Logger.Info("AntiAds Service Started");
+            Logger.Info("AntiAds service started.");
             _client.MessageReceived += AdsHandler;
         }
 
@@ -114,7 +114,7 @@ namespace NoAdsHere.Services.AntiAds
             if (ActiveGuilds[type].Contains(guildId)) return false;
             ActiveGuilds[type].Add(guildId);
             await UpdateBlockEntry(type, guildId, true);
-            Logger.Info($"Enabling AntiAds for Guild {guildId}");
+            Logger.Info($"Enabling AntiAds for guild: {guildId}");
             return true;
         }
 
@@ -123,7 +123,7 @@ namespace NoAdsHere.Services.AntiAds
             if (!ActiveGuilds[type].Contains(guildId)) return false;
             ActiveGuilds[type].Remove(guildId);
             await UpdateBlockEntry(type, guildId, false);
-            Logger.Info($"Disabling AntiAds for Guild {guildId}");
+            Logger.Info($"Disabling AntiAds for guild: {guildId}");
             return true;
         }
 
@@ -144,14 +144,14 @@ namespace NoAdsHere.Services.AntiAds
             if (context.Channel.CheckChannelPermission(ChannelPermission.ManageMessages,
                 await context.Guild.GetCurrentUserAsync()))
             {
-                Logger.Info($"Attempting to delete Message {context.Message.Id} by {context.User} in Guild {context.Guild}.");
+                Logger.Info($"Attempting to delete message with ID {context.Message.Id} by {context.User} in guild {context.Guild}.");
                 try
                 {
                     await context.Message.DeleteAsync();
                 }
                 catch (Exception e)
                 {
-                    Logger.Warn(e, $"Unable to Delete Message {context.Message.Id}.");
+                    Logger.Warn(e, $"Unable to delete message with ID {context.Message.Id}.");
                 }
             }
         }
@@ -165,13 +165,13 @@ namespace NoAdsHere.Services.AntiAds
             {
                 block.IsEnabled = isEnabled;
                 await collection.SaveAsync(block);
-                Logger.Info($"Updated BlockCollection");
+                Logger.Info($"Updated block collection!");
             }
         }
 
         private static async Task LoadActiveGuildsAsync()
         {
-            Logger.Info("Loading Active Guilds");
+            Logger.Info("Loading active guilds...");
             await PopulateDictionary();
             var blocks = await _mongo.GetCollection<Block>(_client).GetBlocksAsync();
 

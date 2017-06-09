@@ -48,7 +48,7 @@ namespace NoAdsHere
 
         public async Task ConfigureAsync()
         {
-            _logger.Info("CommandSerive Started");
+            _logger.Info("Command service started.");
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
         }
 
@@ -73,7 +73,7 @@ namespace NoAdsHere
             switch (result)
             {
                 case SearchResult searchResult:
-                    _logger.Debug($"SearchResult: {searchResult.ErrorReason}");
+                    _logger.Debug($"Failed search result: {searchResult.ErrorReason}");
                     break;
 
                 case ParseResult parseResult:
@@ -85,7 +85,7 @@ namespace NoAdsHere
                     break;
 
                 case ExecuteResult executeResult:
-                    response = $":warning: Your command failed to execute. If this persists, contact the Bot Developer.\n`{executeResult.Exception.Message}`";
+                    response = $":warning: Your command failed to execute. If this persists, contact the bot developer.\n`{executeResult.Exception.Message}`";
                     _logger.Error(executeResult.Exception);
                     break;
 

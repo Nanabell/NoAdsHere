@@ -23,7 +23,7 @@ namespace NoAdsHere.Common.Preconditions
         {
             var level = await GetLevel(context, services.GetService<MongoClient>());
 
-            return level >= _level ? PreconditionResult.FromSuccess() : PreconditionResult.FromError($"Insufficient permission! Required Level {_level}");
+            return level >= _level ? PreconditionResult.FromSuccess() : PreconditionResult.FromError($"Insufficient permissions! Required level: {_level}");
         }
 
         private static async Task<AccessLevel> GetLevel(ICommandContext context, MongoClient mongo)

@@ -25,7 +25,7 @@ namespace NoAdsHere.Services.Penalties
                         msg = await context.Channel.SendMessageAsync($"<:banzy:316314495695716352> {context.User.Mention} {message}! Trigger: {trigger} <:banzy:316314495695716352>");
                     else
                         msg = await context.Channel.SendMessageAsync($":no_entry: {context.User.Mention} {message}! Trigger: {trigger} :no_entry:");
-                    Logger.Info($"{context.User} has been banned from {context.Guild.Id}");
+                    Logger.Info($"{context.User.Username} has been banned from {context.Guild.Id}");
 
                     if (msg != null)
                     {
@@ -37,7 +37,7 @@ namespace NoAdsHere.Services.Penalties
                 }
                 catch (Exception e)
                 {
-                    Logger.Warn($"Unable to ban {context.User}. {e.Message}");
+                    Logger.Warn($"Unable to ban {context.User.Username}. {e.Message}");
                 }
             }
         }

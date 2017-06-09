@@ -33,9 +33,17 @@ namespace NoAdsHere.Commands.Blocks
                 success = await AntiAds.TryDisableGuild(BlockType.InstantInvite, Context.Guild.Id);
 
             if (success)
-                await ReplyAsync($":white_check_mark: Discord Invite Blockings have been set to {setting}. {(setting ? "Please ensure that the bot can ManageMessages in the required channels" : "")} :white_check_mark:");
+                if (setting)
+                {
+                    await ReplyAsync(
+                        $":white_check_mark: Now blocking Discord server invites. Please ensure that the bot has the 'Manage Messages' permission in the required channels. :white_check_mark:");
+                }
+                else
+                {
+                    await ReplyAsync($":white_check_mark: No longer blocking Discord server invites. :white_check_mark:");
+                }
             else
-                await ReplyAsync($":exclamation: Discord Invite Blocks already set to {setting} :exclamation:");
+                await ReplyAsync($":exclamation: Status of Discord server invite blocks already set to {setting}! :exclamation:");
         }
     }
 }
