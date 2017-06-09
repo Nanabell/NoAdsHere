@@ -1,20 +1,20 @@
 # NoAdsHere
-NoAdsHere or nah for short aims to remove ads from Discord Server. All still Work in Progress. Contributions Welcome!
+NoAdsHere or NAH is a Discord bot that helps stop advertising in Discord servers. This project is still a Work-in-Progress. Contributions are welcome!
 
-Invite nah to your server: https://discordapp.com/oauth2/authorize?client_id=316009507446718465&scope=bot&permissions=273414
+Invite NAH to your server: https://discordapp.com/oauth2/authorize?client_id=316009507446718465&scope=bot&permissions=273414
 
 ### Currently working features:
  - Discord Invites
- - Youtube
+ - YouTube
  - Twitch
 
 ### Planed features:
- - (maybe) Url Shorteners
- - More customizing for nah
+ - Url Shorteners?
+ - More Customization
  - Discord Bot Invite Links
 
-Suggestions for new Sites/Services are always welcome!
+Suggestions for new sites/services are always welcome!
  
 # Contributions
-Contributions are always and highly welcome, im only trying to help everyone but im still learning,
-so if you have constructive feedback or want to contribute to improve / add to nah please do so!
+Contributions are always and highly welcome, I'm only trying to help everyone but I'm still learning,
+so if you have constructive feedback or want to contribute to improve/add to NAH, please do so!
