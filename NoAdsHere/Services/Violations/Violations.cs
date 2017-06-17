@@ -52,8 +52,7 @@ namespace NoAdsHere.Services.Violations
             foreach (var penalty in penalties.OrderBy(p => p.RequiredPoints))
             {
                 if (violator.Points != penalty.RequiredPoints) continue;
-                const string defaultMessage = "Advertisements is not allowed in this server!";
-                var message = penalty.Message ?? defaultMessage;
+                var message = penalty.Message ?? GetDefaultMessage(blockType, penalty.PenaltyType);
                 switch (penalty.PenaltyType)
                 {
                     case PenaltyType.Nothing:
@@ -64,7 +63,7 @@ namespace NoAdsHere.Services.Violations
                         break;
 
                     case PenaltyType.Warn:
-                        await MessagePenalty.SendAsync(context, message + " ***Last Warning!***", GetTrigger(blockType),
+                        await MessagePenalty.SendAsync(context, message, GetTrigger(blockType),
                             ":warning:", penalty.AutoDelete);
                         Logger.Info(
                             $"User {context.User} exceeded the limit for Penalty {penalty.PenaltyId}({penalty.RequiredPoints}) on {context.Guild}. Executing Penalty on Level Warn");
@@ -92,6 +91,28 @@ namespace NoAdsHere.Services.Violations
                 var collection = _mongo.GetCollection<Violator>(_client);
                 await collection.DeleteAsync(violator);
                 Logger.Info($"User {context.User} reached the last penalty dropping from Database.");
+            }
+        }
+
+        private static string GetDefaultMessage(BlockType blockType, PenaltyType penaltyType)
+        {
+            //TODO: Implement dffrent Messages for diffrent Blocktypes.
+            switch (penaltyType)
+            {
+                case PenaltyType.Nothing:
+                    return "Advertisement is not allowed in this Server";
+
+                case PenaltyType.Warn:
+                    return "Advertisement is not allowed in this Server! ***Last Warning***";
+
+                case PenaltyType.Kick:
+                    return "has been kicked for Advertisement";
+
+                case PenaltyType.Ban:
+                    return "has been banned for Advertisement";
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(penaltyType), penaltyType, null);
             }
         }
 
