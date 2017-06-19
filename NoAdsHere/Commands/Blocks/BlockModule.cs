@@ -23,7 +23,7 @@ namespace NoAdsHere.Commands.Blocks
                 if (setting)
                 {
                     await ReplyAsync(
-                        $":white_check_mark: Now blocking Discord server invites. Please ensure that the bot has the 'Manage Messages' permission in the required channels. :white_check_mark:");
+                        ":white_check_mark: Now blocking Discord server invites. Please ensure that the bot has the 'Manage Messages' permission in the required channels. :white_check_mark:");
                 }
                 else
                 {
@@ -31,6 +31,30 @@ namespace NoAdsHere.Commands.Blocks
                 }
             else
                 await ReplyAsync($":exclamation: Status of Discord server invite blocks already set to {setting}! :exclamation:");
+        }
+        
+        [Command("Youtube")]
+        [RequirePermission(AccessLevel.HighModerator)]
+        public async Task Youtube(bool setting)
+        {
+            bool success;
+            if (setting)
+                success = await AntiAds.TryEnableGuild(BlockType.YoutubeLink, Context.Guild.Id);
+            else
+                success = await AntiAds.TryDisableGuild(BlockType.YoutubeLink, Context.Guild.Id);
+
+            if (success)
+                if (setting)
+                {
+                    await ReplyAsync(
+                        ":white_check_mark: Now blocking YouTube links. Please ensure that the bot has the 'Manage Messages' permission in the required channels. :white_check_mark:");
+                }
+                else
+                {
+                    await ReplyAsync(":white_check_mark: No longer blocking YouTube links. :white_check_mark:");
+                }
+            else
+                await ReplyAsync($":exclamation: Status of YouTube link blocks already set to {setting}! :exclamation:");
         }
 
         [Command("Twitch")]
