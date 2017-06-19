@@ -37,7 +37,7 @@ namespace NoAdsHere.Commands.Ignores
                     user.Id, blockType);
                 await collection.InsertOneAsync(userIgnore);
                 await ReplyAsync(
-                    $":white_check_mark: User {user}`(ID: {user.Id})` will now be whitelisted for invites. :white_check_mark:");
+                    $":white_check_mark: User {user}`(ID: {user.Id})` will now be whitelisted for {blockType}. :white_check_mark:");
             }
             else
             {
@@ -60,7 +60,7 @@ namespace NoAdsHere.Commands.Ignores
                     role.Id, blockType);
                 await collection.InsertOneAsync(roleIgnore);
                 await ReplyAsync(
-                    $":white_check_mark: Role {role}`(ID: {role.Id})` will now be whitelisted for invites :white_check_mark:");
+                    $":white_check_mark: Role {role}`(ID: {role.Id})` will now be whitelisted for {blockType} :white_check_mark:");
             }
             else
             {
@@ -83,7 +83,7 @@ namespace NoAdsHere.Commands.Ignores
                     channel.Id, blockType);
                 await collection.InsertOneAsync(channelIgnore);
                 await ReplyAsync(
-                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will now be whitelisted for invites :white_check_mark:");
+                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will now be whitelisted for {blockType} :white_check_mark:");
             }
             else
             {
@@ -106,7 +106,7 @@ namespace NoAdsHere.Commands.Ignores
             {
                 await collection.DeleteAsync(first);
                 await ReplyAsync(
-                    $":white_check_mark: User {user}`(ID: {user.Id})` will no longer be whitelisted for invites. :white_check_mark:");
+                    $":white_check_mark: User {user}`(ID: {user.Id})` will no longer be whitelisted for {blockType}. :white_check_mark:");
             }
             else
             {
@@ -129,7 +129,7 @@ namespace NoAdsHere.Commands.Ignores
             {
                 await collection.DeleteAsync(first);
                 await ReplyAsync(
-                    $":white_check_mark: Role {role}`(ID: {role.Id})` will no longer be whitelisted for invites :white_check_mark:");
+                    $":white_check_mark: Role {role}`(ID: {role.Id})` will no longer be whitelisted for {blockType}. :white_check_mark:");
             }
             else
             {
@@ -152,7 +152,7 @@ namespace NoAdsHere.Commands.Ignores
             {
                 await collection.DeleteAsync(first);
                 await ReplyAsync(
-                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will no longer be whitelisted for invites :white_check_mark:");
+                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will no longer be whitelisted for {blockType} :white_check_mark:");
             }
             else
             {
@@ -176,6 +176,7 @@ namespace NoAdsHere.Commands.Ignores
                 case "twitchstream":
                 case "stream":
                 case "tstream":
+                case "twitch":
                     return BlockType.TwitchStream;
 
                 case "twitchvideo":
