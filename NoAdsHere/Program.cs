@@ -133,7 +133,7 @@ namespace NoAdsHere
                 .AddSingleton(_config)
                 .AddSingleton(_mongo)
                 .AddSingleton(_scheduler)
-                .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false, LogLevel = LogSeverity.Verbose }));
+                .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false, LogLevel = LogSeverity.Verbose, DefaultRunMode = RunMode.Sync}));
 
             var provider = servies.BuildServiceProvider();
             return provider;
