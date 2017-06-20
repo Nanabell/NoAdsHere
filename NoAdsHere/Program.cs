@@ -14,6 +14,7 @@ using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using System.Linq;
 using System.Collections.Generic;
+using Discord.Addons.InteractiveCommands;
 using NoAdsHere.Common;
 using Quartz;
 using Quartz.Impl;
@@ -134,6 +135,7 @@ namespace NoAdsHere
                 .AddSingleton(_config)
                 .AddSingleton(_mongo)
                 .AddSingleton(_scheduler)
+                .AddSingleton(new InteractiveService(_client))
                 .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false, LogLevel = LogSeverity.Verbose, DefaultRunMode = RunMode.Sync}));
 
             var provider = servies.BuildServiceProvider();
