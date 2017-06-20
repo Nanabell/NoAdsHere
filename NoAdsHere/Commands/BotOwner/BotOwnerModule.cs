@@ -1,13 +1,19 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
+using NLog;
 using NoAdsHere.Commands.Penalties;
+using NoAdsHere.Database;
+using NoAdsHere.Database.Models.Global;
 
 namespace NoAdsHere.Commands.BotOwner
 {
+    [Name("Bot Owner")]
     public class BotOwnerModule : ModuleBase
     {
         private readonly MongoClient _mongo;
@@ -17,12 +23,27 @@ namespace NoAdsHere.Commands.BotOwner
             _mongo = provider.GetService<MongoClient>();
         }
 
-
-        [Command("Update")]
+        [Command("Shutdown")]
         [RequireOwner]
-        public async Task Update()
+        public async Task Shutdown()
         {
-            await Task.CompletedTask;
+            await ReplyAsync("*Shutting down..*");
+            var client = Context.Client as DiscordSocketClient;
+            if (client != null)
+            {
+                var _ = StopAsync(client);
+            }
+        }
+
+        private static async Task StopAsync(DiscordSocketClient client)
+        {
+            await CommandHandler.StopHandler();
+            
+            await client.LogoutAsync();
+            await client.StopAsync();
+            var logger = LogManager.GetLogger("Discord");
+            logger.Info("Bot was shut down via command.");
+            Environment.Exit(0);
         }
 
         [Command("Reset all guilds.")]
@@ -41,6 +62,45 @@ namespace NoAdsHere.Commands.BotOwner
             }
             await ReplyAsync($"{counter} guilds have been reset.");
         
+        }
+
+        [Command("Add Master")]
+        [RequireOwner]
+        public async Task Add_Master(IUser user)
+        {
+            var newMaster = new Master(user.Id);
+            var collection = _mongo.GetCollection<Master>(Context.Client);
+
+            var masters = await collection.GetMastersAsync();
+
+            if (masters.All(m => m.UserId != user.Id))
+            {
+                await collection.InsertOneAsync(newMaster);
+                await ReplyAsync($"{user} added to global Masters!");
+            }
+            else
+            {
+                await ReplyAsync($"{user} is already a Master.");
+            }
+            
+        }
+
+        [Command("Remove Master")]
+        [RequireOwner]
+        public async Task Remove_Master(IUser user)
+        {
+            var collection = _mongo.GetCollection<Master>(Context.Client);
+            var masters = await collection.GetMastersAsync();
+
+            if (masters.Any(m => m.UserId == user.Id))
+            {
+                await collection.DeleteAsync(masters.First(m => m.UserId == user.Id));
+                await ReplyAsync($"{user} removed from global Masters!");
+            }
+            else
+            {
+                await ReplyAsync($"{user} is not a Master.");
+            }
         }
     }
 }

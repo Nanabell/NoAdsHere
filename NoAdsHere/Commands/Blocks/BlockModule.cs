@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using NoAdsHere.Common;
@@ -6,135 +9,136 @@ using NoAdsHere.Services.AntiAds;
 
 namespace NoAdsHere.Commands.Blocks
 {
-    [Name("Blocks"), Group("Blocks")]
+    [Name("Blocks"), Alias("Block"), Group("Blocks")]
     public class BlockModule : ModuleBase
     {
-        [Command("Invite")]
+        [Command("Enable")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Invites(bool setting)
+        public async Task Enable(string type)
         {
-            bool success;
-            if (setting)
-                success = await AntiAds.TryEnableGuild(BlockType.InstantInvite, Context.Guild.Id);
-            else
-                success = await AntiAds.TryDisableGuild(BlockType.InstantInvite, Context.Guild.Id);
+            var success = new List<bool>(0);
+            var blocktype = ParseBlockType(type);
 
-            if (success)
-                if (setting)
-                {
-                    await ReplyAsync(
-                        ":white_check_mark: Now blocking Discord server invites. Please ensure that the bot has the 'Manage Messages' permission in the required channels. :white_check_mark:");
-                }
-                else
-                {
-                    await ReplyAsync($":white_check_mark: No longer blocking Discord server invites. :white_check_mark:");
-                }
+            switch (blocktype)
+            {
+                case BlockType.InstantInvite:
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.InstantInvite, Context.Guild.Id)); 
+                    break;
+                case BlockType.YoutubeLink:
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.YoutubeLink, Context.Guild.Id));
+                    break;
+                case BlockType.TwitchStream:
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchStream, Context.Guild.Id));
+                    break;
+                case BlockType.TwitchVideo:
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchVideo, Context.Guild.Id));
+                    break;
+                case BlockType.TwitchClip:
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchClip, Context.Guild.Id));
+                    break;
+                case BlockType.All:
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.InstantInvite, Context.Guild.Id));
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.YoutubeLink, Context.Guild.Id));
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchStream, Context.Guild.Id));
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchVideo, Context.Guild.Id));
+                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchClip, Context.Guild.Id));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (success.All(f => f))
+            {
+                await ReplyAsync(
+                    $"Now blocking {blocktype}. Please ensure that the bot has the 'Manage Messages' permission in the required channels.");
+            }
             else
-                await ReplyAsync($":exclamation: Status of Discord server invite blocks already set to {setting}! :exclamation:");
+            {
+                await ReplyAsync("Some settings were already enabled.");
+            }
         }
         
-        [Command("Youtube")]
+        [Command("Disable")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Youtube(bool setting)
+        public async Task Disable(string type)
         {
-            bool success;
-            if (setting)
-                success = await AntiAds.TryEnableGuild(BlockType.YoutubeLink, Context.Guild.Id);
-            else
-                success = await AntiAds.TryDisableGuild(BlockType.YoutubeLink, Context.Guild.Id);
+            var success = new List<bool>(0);
+            var blocktype = ParseBlockType(type);
 
-            if (success)
-                if (setting)
-                {
-                    await ReplyAsync(
-                        ":white_check_mark: Now blocking YouTube links. Please ensure that the bot has the 'Manage Messages' permission in the required channels. :white_check_mark:");
-                }
-                else
-                {
-                    await ReplyAsync(":white_check_mark: No longer blocking YouTube links. :white_check_mark:");
-                }
-            else
-                await ReplyAsync($":exclamation: Status of YouTube link blocks already set to {setting}! :exclamation:");
-        }
-
-        [Command("Twitch")]
-        [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Twitch(bool setting)
-        {
-            bool success;
-            if (setting)
+            switch (blocktype)
             {
-                var _1 = await AntiAds.TryEnableGuild(BlockType.TwitchClip, Context.Guild.Id);
-                var _2 = await AntiAds.TryEnableGuild(BlockType.TwitchStream, Context.Guild.Id);
-                var _3 = await AntiAds.TryEnableGuild(BlockType.TwitchVideo, Context.Guild.Id);
-                if (_1 && _2 && _3)
-                    success = true;
-                else
-                    success = false;
+                case BlockType.InstantInvite:
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.InstantInvite, Context.Guild.Id)); 
+                    break;
+                case BlockType.YoutubeLink:
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.YoutubeLink, Context.Guild.Id));
+                    break;
+                case BlockType.TwitchStream:
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchStream, Context.Guild.Id));
+                    break;
+                case BlockType.TwitchVideo:
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchVideo, Context.Guild.Id));
+                    break;
+                case BlockType.TwitchClip:
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchClip, Context.Guild.Id));
+                    break;
+                case BlockType.All:
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.InstantInvite, Context.Guild.Id));
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.YoutubeLink, Context.Guild.Id));
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchStream, Context.Guild.Id));
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchVideo, Context.Guild.Id));
+                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchClip, Context.Guild.Id));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (success.All(f => f))
+            {
+                await ReplyAsync(
+                    $"No longer blocking {blocktype}.");
             }
             else
             {
-                var _1 = await AntiAds.TryDisableGuild(BlockType.TwitchClip, Context.Guild.Id);
-                var _2 = await AntiAds.TryDisableGuild(BlockType.TwitchStream, Context.Guild.Id);
-                var _3 = await AntiAds.TryDisableGuild(BlockType.TwitchVideo, Context.Guild.Id);
-                if (_1 && _2 && _3)
-                    success = true;
-                else
-                    success = false;
+                await ReplyAsync("Some settings were already disabled.");
             }
-
-            if (success)
-                await ReplyAsync($":white_check_mark: Twitch Link Blockings have been set to {setting}. {(setting ? "Please ensure that the bot can ManageMessages in the required channels" : "")} :white_check_mark:");
-            else
-                await ReplyAsync($":exclamation: Twitch Link Blocks already set to {setting} :exclamation:");
         }
-
-        [Command("Twitch Stream")]
-        [RequirePermission(AccessLevel.HighModerator)]
-        public async Task TwitchStream(bool setting)
+        
+        private static BlockType ParseBlockType(string type)
         {
-            bool success;
-            if (setting)
-                success = await AntiAds.TryEnableGuild(BlockType.TwitchStream, Context.Guild.Id);
-            else
-                success = await AntiAds.TryDisableGuild(BlockType.TwitchStream, Context.Guild.Id);
+            switch (type)
+            {
+                case "instantinvites":
+                case "invite":
+                case "inv":
+                    return BlockType.InstantInvite;
 
-            if (success)
-                await ReplyAsync($":white_check_mark: Twitch Stream Blockings have been set to {setting}. {(setting ? "Please ensure that the bot can ManageMessages in the required channels" : "")} :white_check_mark:");
-            else
-                await ReplyAsync($":exclamation: Twitch Stream Blocks already set to {setting} :exclamation:");
-        }
+                case "youtube":
+                case "yt":
+                    return BlockType.YoutubeLink;
 
-        [Command("Twitch Clip")]
-        [RequirePermission(AccessLevel.HighModerator)]
-        public async Task TwitchClip(bool setting)
-        {
-            bool success;
-            if (setting)
-                success = await AntiAds.TryEnableGuild(BlockType.TwitchClip, Context.Guild.Id);
-            else
-                success = await AntiAds.TryDisableGuild(BlockType.TwitchClip, Context.Guild.Id);
+                case "twitchstream":
+                case "stream":
+                case "tstream":
+                case "twitch":
+                    return BlockType.TwitchStream;
 
-            if (success)
-                await ReplyAsync($":white_check_mark: Twitch Clip Blockings have been set to {setting}. {(setting ? "Please ensure that the bot can ManageMessages in the required channels" : "")} :white_check_mark:");
-            else
-                await ReplyAsync($":exclamation: Twitch Clip Blocks already set to {setting} :exclamation:");
-        }
+                case "twitchvideo":
+                case "video":
+                case "tvideo":
+                    return BlockType.TwitchVideo;
 
-        [Command("Twitch Video")]
-        [RequirePermission(AccessLevel.HighModerator)]
-        public async Task TwitchVideo(bool setting)
-        {
-            bool success;
-            if (setting)
-                success = await AntiAds.TryEnableGuild(BlockType.TwitchVideo, Context.Guild.Id);
-            else
-                success = await AntiAds.TryDisableGuild(BlockType.TwitchVideo, Context.Guild.Id);
+                case "twitchclip":
+                case "clip":
+                case "tclip":
+                    return BlockType.TwitchClip;
 
-            if (success)
-                await ReplyAsync($":white_check_mark: Twitch Viode Blockings have been set to {setting}. {(setting ? "Please ensure that the bot can ManageMessages in the required channels" : "")} :white_check_mark:");
-            else
-                await ReplyAsync($":exclamation: Twitch Video Blocks already set to {setting} :exclamation:");
+                case "all":
+                    return BlockType.All;
+
+                default:
+                    return BlockType.All;
+            }
         }
     }
 }

@@ -12,7 +12,7 @@ using NoAdsHere.Database.Models.GuildSettings;
 
 namespace NoAdsHere.Commands.Ignores
 {
-    [Name("Ignore"), Group("Ignore")]
+    [Name("Ignores"), Alias("Ignore"), Group("Ignores")]
     public class IgnoreModule : ModuleBase
     {
         private readonly MongoClient _mongo;

@@ -11,16 +11,17 @@ using NoAdsHere.Database.Models.GuildSettings;
 using Discord.WebSocket;
 using System.Collections.Generic;
 using NLog;
+using NLog.Fluent;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
 
 namespace NoAdsHere.Commands.Penalties
 {
-    [Name("Penalties"), Group("Penalties")]
+    [Name("Penalties"), Alias("Penalty"), Group("Penalties")]
     public class PenaltyModule : ModuleBase
     {
         private readonly MongoClient _mongo;
-        private readonly Logger _logger = LogManager.GetLogger("AntiAds");
+        private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
         public PenaltyModule(IServiceProvider provider)
         {
@@ -136,7 +137,10 @@ namespace NoAdsHere.Commands.Penalties
                 newPenalties.Add(new Penalty(guild.Id, 4, PenaltyType.Ban, 6, autoDelete: true));
 
             if (newPenalties.Any())
+            {
                 await collection.InsertManyAsync(newPenalties);
+                Logger.Info($"Added default penalties to guild {guild}");
+            }
         }
     }
 }
