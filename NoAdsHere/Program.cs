@@ -113,9 +113,9 @@ namespace NoAdsHere
                 await collection.InsertManyAsync(newPenalties);
         }
 
-        private async Task<IScheduler> StartQuartz()
+        private static async Task<IScheduler> StartQuartz()
         {
-            StdSchedulerFactory factory = new StdSchedulerFactory();
+            var factory = new StdSchedulerFactory();
             var scheduler = await factory.GetScheduler();
             await scheduler.Start();
             return scheduler;

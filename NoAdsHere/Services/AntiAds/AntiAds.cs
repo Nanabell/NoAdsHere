@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using NoAdsHere.Common;
 using NoAdsHere.Database;
+using NoAdsHere.Database.Models.Global;
 using NoAdsHere.Database.Models.GuildSettings;
 
 namespace NoAdsHere.Services.AntiAds
@@ -114,7 +115,7 @@ namespace NoAdsHere.Services.AntiAds
             if (ActiveGuilds[type].Contains(guildId)) return false;
             ActiveGuilds[type].Add(guildId);
             await UpdateBlockEntry(type, guildId, true);
-            Logger.Info($"Enabling AntiAds for guild: {guildId}");
+            Logger.Info($"Enabling AntiAds type {type} for guild {_client.GetGuild(guildId)}");
             return true;
         }
 
@@ -123,7 +124,7 @@ namespace NoAdsHere.Services.AntiAds
             if (!ActiveGuilds[type].Contains(guildId)) return false;
             ActiveGuilds[type].Remove(guildId);
             await UpdateBlockEntry(type, guildId, false);
-            Logger.Info($"Disabling AntiAds for guild: {guildId}");
+            Logger.Info($"Disabling AntiAds type {type} for guild {_client.GetGuild(guildId)}");
             return true;
         }
 
@@ -149,7 +150,8 @@ namespace NoAdsHere.Services.AntiAds
             if (context.Channel.CheckChannelPermission(ChannelPermission.ManageMessages,
                 await context.Guild.GetCurrentUserAsync()))
             {
-                Logger.Info($"Attempting to delete message with ID {context.Message.Id} by {context.User} in guild {context.Guild}.");
+                Logger.Info(
+                    $"Attempting to delete message with ID {context.Message.Id} by {context.User} in guild {context.Guild}.");
                 try
                 {
                     await context.Message.DeleteAsync();
@@ -170,7 +172,7 @@ namespace NoAdsHere.Services.AntiAds
             {
                 block.IsEnabled = isEnabled;
                 await collection.SaveAsync(block);
-                Logger.Info($"Updated block collection!");
+                Logger.Info("Updated block collection!");
             }
         }
 
@@ -184,7 +186,7 @@ namespace NoAdsHere.Services.AntiAds
             {
                 if (!block.IsEnabled) continue;
                 ActiveGuilds[block.BlockType].Add(block.GuildId);
-                Logger.Info($"Guild {block.GuildId} added active list {block.BlockType}");
+                Logger.Info($"Guild {_client.GetGuild(block.GuildId)} added active list {block.BlockType}");
             }
         }
 
