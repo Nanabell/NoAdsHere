@@ -6,8 +6,7 @@ using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
 using System.Collections.Generic;
 using NoAdsHere.Common;
-using NoAdsHere.Database.Models.Settings;
-using NoAdsHere.Services.AntiAds;
+using NoAdsHere.Database.Models.Global;
 
 namespace NoAdsHere.Database
 {
@@ -112,7 +111,32 @@ namespace NoAdsHere.Database
             return result2;
         }
 
+        public static async Task<List<Violator>> GetAllByGuildAsync(this IMongoCollection<Violator> collection,
+            IGuild guild)
+        {
+            var cursor = await collection.FindAsync(f => f.GuildId == guild.Id);
+            return await cursor.ToListAsync();
+        }
+
         public static async Task<List<Master>> GetMastersAsync(this IMongoCollection<Master> collection)
+        {
+            var cursor = await collection.FindAsync("{}");
+            return await cursor.ToListAsync();
+        }
+
+        public static async Task<Stats> GetGuildStatsAsync(this IMongoCollection<Stats> collection, IGuild guild)
+        {
+            var cursor = await collection.FindAsync(f => f.GuildId == guild.Id);
+            var result = await cursor.FirstOrDefaultAsync();
+
+            if (result != null)
+                return result;
+            await collection.InsertOneAsync(new Stats(guild.Id));
+            var cursor2 = await collection.FindAsync(f => f.GuildId == guild.Id);
+            return await cursor2.FirstOrDefaultAsync();
+        }
+
+        public static async Task<List<Stats>> GetAllStatsAsync(this IMongoCollection<Stats> collection)
         {
             var cursor = await collection.FindAsync("{}");
             return await cursor.ToListAsync();
