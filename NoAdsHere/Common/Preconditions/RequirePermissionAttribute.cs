@@ -6,7 +6,7 @@ using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using NoAdsHere.Database;
-using NoAdsHere.Database.Models.Settings;
+using NoAdsHere.Database.Models.Global;
 
 namespace NoAdsHere.Common.Preconditions
 {
@@ -39,16 +39,11 @@ namespace NoAdsHere.Common.Preconditions
             if (masters.Any(master => master.UserId == context.User.Id))
                 return AccessLevel.Master;
 
-            if (context.Guild == null)
-                return AccessLevel.Private;
-
+            if (!(context.User is IGuildUser guildUser)) return AccessLevel.Private;
+            
             if (context.Guild.OwnerId == context.User.Id)
                 return AccessLevel.Owner;
-
-            var guildUser = context.User as IGuildUser;
-            if (guildUser == null)
-                return AccessLevel.Private;
-
+            
             if (guildUser.GuildPermissions.Administrator)
                 return AccessLevel.Admin;
 
