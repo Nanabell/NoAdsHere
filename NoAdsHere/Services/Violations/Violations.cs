@@ -48,11 +48,16 @@ namespace NoAdsHere.Services.Violations
         private static async Task ExecutePenalty(ICommandContext context, Violator violator, BlockType blockType)
         {
             var penalties = await _mongo.GetCollection<Penalty>(_client).GetPenaltiesAsync(violator.GuildId);
-
+            var statsCollection = _mongo.GetCollection<Stats>(_client);
+            var stats = await statsCollection.GetGuildStatsAsync(context.Guild);
+            stats.Blocks++;
+            
+            
             foreach (var penalty in penalties.OrderBy(p => p.RequiredPoints))
             {
                 if (violator.Points != penalty.RequiredPoints) continue;
                 var message = penalty.Message ?? GetDefaultMessage(blockType, penalty.PenaltyType);
+
                 switch (penalty.PenaltyType)
                 {
                     case PenaltyType.Nothing:
@@ -67,29 +72,34 @@ namespace NoAdsHere.Services.Violations
                             ":warning:", penalty.AutoDelete);
                         Logger.Info(
                             $"User {context.User} exceeded the limit for Penalty {penalty.PenaltyId}({penalty.RequiredPoints}) on {context.Guild}. Executing Penalty on Level Warn");
+                        stats.Warns++;
                         break;
 
                     case PenaltyType.Kick:
                         await KickPenalty.KickAsync(context, message, GetTrigger(blockType), autoDelete: penalty.AutoDelete);
                         Logger.Info(
                             $"User {context.User} exceeded the limit for Penalty {penalty.PenaltyId}({penalty.RequiredPoints}) on {context.Guild}. Executing Penalty on Level Kick");
+                        stats.Kicks++;
                         break;
 
                     case PenaltyType.Ban:
                         await BanPenalty.BanAsync(context, message, GetTrigger(blockType), autoDelete: penalty.AutoDelete);
                         Logger.Info(
                             $"User {context.User} exceeded the limit for Penalty {penalty.PenaltyId}({penalty.RequiredPoints}) on {context.Guild}. Executing Penalty on Level Kick");
+                        stats.Bans++;
                         break;
 
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
+                
             }
-
+            await statsCollection.SaveAsync(stats);
+            
             if (violator.Points >= penalties.Max(p => p.RequiredPoints))
             {
-                var collection = _mongo.GetCollection<Violator>(_client);
-                await collection.DeleteAsync(violator);
+                var violatorCollection = _mongo.GetCollection<Violator>(_client);
+                await violatorCollection.DeleteAsync(violator);
                 Logger.Info($"User {context.User} reached the last penalty dropping from Database.");
             }
         }
