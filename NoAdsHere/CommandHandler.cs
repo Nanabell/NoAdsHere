@@ -2,30 +2,25 @@
 using Discord.WebSocket;
 using NLog;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
-using System.Linq;
 using NoAdsHere.Common;
 using NoAdsHere.Services.Configuration;
 
 namespace NoAdsHere
 {
-    public class CommandHandler
+    public static class CommandHandler
     {
-        private readonly IServiceProvider _provider;
-        private readonly CommandService _commands;
-        private readonly DiscordSocketClient _client;
-        private readonly Config _config;
-        private readonly Logger _logger = LogManager.GetLogger("CommandHandler");
-        private readonly Logger _discordLogger = LogManager.GetLogger("Command");
+        private static IServiceProvider _provider;
+        private static CommandService _commands;
+        private static DiscordSocketClient _client;
+        private static Config _config;
+        private static readonly Logger Logger = LogManager.GetLogger("CommandHandler");
 
-        private IEnumerable<ulong> Whitelist => _config.ChannelWhitelist;
 
-        public CommandHandler(IServiceProvider provider)
+        public static Task Install(IServiceProvider provider)
         {
             _provider = provider;
             _client = _provider.GetService<DiscordSocketClient>();
@@ -34,25 +29,34 @@ namespace NoAdsHere
             _config = _provider.GetService<Config>();
 
             _commands.Log += CommandLogger;
+            
+            return Task.CompletedTask;
         }
 
-        private Task CommandLogger(LogMessage message)
+        private static Task CommandLogger(LogMessage message)
         {
+            var logger = LogManager.GetLogger("Command");
             if (message.Exception == null)
-                _discordLogger.Log(Program.LogLevelParser(message.Severity), message.Message);
+                logger.Info(message.Message);
             else
-                _discordLogger.Log(Program.LogLevelParser(message.Severity), message.Exception, message.Message);
+                logger.Warn(message.Exception, message.Message);
 
             return Task.CompletedTask;
         }
 
-        public async Task ConfigureAsync()
+        public static async Task ConfigureAsync()
         {
-            _logger.Info("Command service started.");
+            Logger.Info("Command service started.");
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
         }
 
-        private async Task ProccessCommandAsync(SocketMessage pMsg)
+        public static Task StopHandler()
+        {
+            _client.MessageReceived -= ProccessCommandAsync;
+            return Task.CompletedTask;
+        }
+
+        private static async Task ProccessCommandAsync(SocketMessage pMsg)
         {
             var message = pMsg as SocketUserMessage;
             if (message == null) return;
@@ -73,7 +77,7 @@ namespace NoAdsHere
             switch (result)
             {
                 case SearchResult searchResult:
-                    _logger.Debug($"Failed search result: {searchResult.ErrorReason}");
+                    Logger.Debug($"Failed search result: {searchResult.ErrorReason}");
                     break;
 
                 case ParseResult parseResult:
@@ -86,11 +90,11 @@ namespace NoAdsHere
 
                 case ExecuteResult executeResult:
                     response = $":warning: Your command failed to execute. If this persists, contact the bot developer.\n`{executeResult.Exception.Message}`";
-                    _logger.Error(executeResult.Exception);
+                    Logger.Error(executeResult.Exception);
                     break;
 
                 default:
-                    _logger.Debug($"Unknown Result Type: {result?.Error}");
+                    Logger.Debug($"Unknown Result Type: {result?.Error}");
                     break;
             }
 
@@ -98,22 +102,20 @@ namespace NoAdsHere
                 await context.Channel.SendMessageAsync(response);
         }
 
-        private bool ParseTriggers(SocketUserMessage message, ref int argPos)
+        private static bool ParseTriggers(IUserMessage message, ref int argPos)
         {
-            bool flag = false;
+            var flag = false;
             if (message.HasMentionPrefix(_client.CurrentUser, ref argPos)) flag = true;
             else
             {
                 foreach (var prefix in _config.CommandStrings)
                 {
-                    if (message.HasStringPrefix(prefix, ref argPos))
-                    {
-                        flag = true;
-                        break;
-                    }
+                    if (!message.HasStringPrefix(prefix, ref argPos)) continue;
+                    flag = true;
+                    break;
                 }
             }
-            return flag /*? Whitelist.Any(id => id == message.Channel.Id) : false*/;
+            return flag;
         }
     }
 }

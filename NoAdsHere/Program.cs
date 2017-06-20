@@ -28,11 +28,10 @@ namespace NoAdsHere
         private DiscordSocketClient _client;
         private Config _config;
         private MongoClient _mongo;
-        private CommandHandler _handler;
         private readonly Logger _logger = LogManager.GetLogger("Core");
         private readonly Logger _discordLogger = LogManager.GetLogger("Discord");
-        private readonly bool ReadyExecuted = false;
-        private IServiceProvider provider;
+        private bool _readyExecuted;
+        private IServiceProvider _provider;
         private IScheduler _scheduler;
 
         public async Task RunAsync()
@@ -55,7 +54,7 @@ namespace NoAdsHere
             _mongo = CreateDatabaseConnection();
             _scheduler = await StartQuartz();
 
-            provider = ConfigureServices();
+            _provider = ConfigureServices();
 
             await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();
@@ -65,18 +64,20 @@ namespace NoAdsHere
 
         private async Task Ready()
         {
-            if (!ReadyExecuted)
+            if (!_readyExecuted)
             {
                 await Task.Delay(500);
-                _handler = new CommandHandler(provider);
-                await _handler.ConfigureAsync();
+                await CommandHandler.Install(_provider);
+                await CommandHandler.ConfigureAsync();
+                
+                await Violations.Install(_provider);
 
-                await Violations.Install(provider);
-
-                await AntiAds.Install(provider);
+                await AntiAds.Install(_provider);
                 await AntiAds.StartServiceAsync();
 
-                await JobQueue.Install(provider);
+                await JobQueue.Install(_provider);
+
+                _readyExecuted = true;
             }
         }
 
