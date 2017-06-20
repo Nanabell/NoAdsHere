@@ -131,9 +131,14 @@ namespace NoAdsHere.Services.AntiAds
         {
             var guildUser = context.User as IGuildUser;
             var ignores = await _mongo.GetCollection<Ignore>(_client).GetIgnoresAsync(context.Guild.Id, blockType);
+            var masters = await _mongo.GetCollection<Master>(_client).GetMastersAsync();
 
+            if (masters.Any(m => m.UserId == context.User.Id)) return false;
+            
             if (ignores.GetIgnoreType(IgnoreType.Channel).Any(c => c.IgnoredId == context.Channel.Id)) return false;
             if (ignores.GetIgnoreType(IgnoreType.User).Any(u => u.IgnoredId == context.User.Id)) return false;
+            
+            
             // ReSharper disable once PossibleNullReferenceException
             return !guildUser.RoleIds.Any(roleId => ignores.GetIgnoreType(IgnoreType.Role)
                 .Any(r => r.IgnoredId == roleId));
