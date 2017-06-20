@@ -46,7 +46,7 @@ namespace NoAdsHere.Commands
                 sb.AppendLine($"**{group.Key}**: {string.Join(" ", commands.Distinct())}");
             }
             sb.AppendLine(
-                $"\nYou can use `{_config.CommandStrings.First()}Help <command>` for more information on that command.");
+                $"\nTo use commands do `{_config.CommandStrings.First()}<group> <command>`.");
 
             await ReplyAsync($"{sb}");
         }
