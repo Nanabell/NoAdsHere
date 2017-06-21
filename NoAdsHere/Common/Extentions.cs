@@ -10,6 +10,13 @@ namespace NoAdsHere.Common
 {
     public static class Extentions
     {
+        public static string RemoveWhitespace(this string input)
+        {
+            return new string(input
+                .Where(c => !char.IsWhiteSpace(c))
+                .ToArray());
+        }
+        
         public static bool CheckChannelPermission(this IMessageChannel channel, ChannelPermission permission, IGuildUser guildUser)
         {
             var guildchannel = channel as IGuildChannel;
