@@ -1,9 +1,12 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using NLog;
@@ -101,6 +104,114 @@ namespace NoAdsHere.Commands.BotOwner
             {
                 await ReplyAsync($"{user} is not a Master.");
             }
+        }
+
+        [Command("Eval", RunMode = RunMode.Async)]
+        [RequireOwner]
+        public async Task Eval([Remainder] string code)
+        {
+            string cs;
+            if (code.StartsWith("```"))
+            {
+                var cs1 = code.IndexOf("```", StringComparison.Ordinal) + 3;
+                cs1 = code.IndexOf('\n', cs1) + 1;
+                var cs2 = code.IndexOf("```", cs1, StringComparison.Ordinal);
+                cs = code.Substring(cs1, cs2 - cs1);
+            }
+            else
+                cs = code;
+            
+            var msg = await SendEmbedAsync(BuildEmbed("Evaluating...", null, 2));
+
+            try
+            {
+                var globals = new Globals
+                {
+                    Context = Context,
+                    Message = Context.Message as SocketUserMessage,
+                    Client = Context.Client as DiscordSocketClient
+                };
+
+                var sopts = ScriptOptions.Default;
+                sopts = sopts.WithImports("System", "System.Linq", "Discord", "Discord.WebSocket");
+                sopts = sopts.WithReferences(Assembly.GetEntryAssembly());
+
+                var script = CSharpScript.Create(cs, sopts, typeof(Globals));
+                script.Compile();
+                var result = await script.RunAsync(globals);
+                
+                if (!string.IsNullOrWhiteSpace(result?.ReturnValue?.ToString()))
+                    await SendEmbedAsync(BuildEmbed("Evaluation Result", result.ReturnValue.ToString(), 2), msg);
+                else
+                    await SendEmbedAsync(BuildEmbed("Evaluation Successful", "No result was returned.", 2), msg);
+            }
+            catch (Exception e)
+            {
+                await SendEmbedAsync(
+                    BuildEmbed("Evaluation Failure", string.Concat("**", e.GetType().ToString(), "**: ", e.Message), 1),
+                    msg);
+            }
+        }
+        
+        public class Globals
+        {
+            public ICommandContext Context { get; set; }
+            public SocketUserMessage Message { get; set; }
+            public SocketTextChannel Channel => Message.Channel as SocketTextChannel;
+            public SocketGuild Guild => Channel.Guild;
+            public SocketUser User => Message.Author;
+            public DiscordSocketClient Client { get; set; }
+        }
+
+
+
+
+        
+        private Task<IUserMessage> SendEmbedAsync(EmbedBuilder embed, IUserMessage nmsg)
+            => SendEmbedAsync(embed, null, nmsg);
+        private Task<IUserMessage> SendEmbedAsync(EmbedBuilder embed)
+            => SendEmbedAsync(embed, null, Context.Message);
+
+        private async Task<IUserMessage> SendEmbedAsync(EmbedBuilder embed, string content, IUserMessage message)
+        {
+            var mod = message.Author.Id == Context.Client.CurrentUser.Id;
+
+            if (mod)
+                await message.ModifyAsync(x =>
+                {
+                    x.Embed = embed.Build();
+                    x.Content = !string.IsNullOrWhiteSpace(content) ? content : message.Content;
+                });
+            else if (!string.IsNullOrWhiteSpace(content))
+                message = await message.Channel.SendMessageAsync(string.Concat(message.Author.Mention, ": ", content), false, embed);
+            else
+                message = await message.Channel.SendMessageAsync(message.Author.Mention, false, embed);
+
+            return message;
+        }
+        
+        private static EmbedBuilder BuildEmbed(string title, string desc, int type)
+        {
+            var embed = new EmbedBuilder
+            {
+                Title = title,
+                Description = desc
+            };
+            switch (type)
+            {
+                default:
+                    embed.Color = new Color(0, 127, 255);
+                    break;
+
+                case 1:
+                    embed.Color = new Color(255, 0, 0);
+                    break;
+
+                case 2:
+                    embed.Color = new Color(127, 255, 0);
+                    break;
+            }
+            return embed;
         }
     }
 }
