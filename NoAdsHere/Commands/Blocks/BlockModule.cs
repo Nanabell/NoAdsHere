@@ -110,6 +110,7 @@ namespace NoAdsHere.Commands.Blocks
             {
                 case "instantinvites":
                 case "invite":
+                case "invites":
                 case "inv":
                     return BlockType.InstantInvite;
 
