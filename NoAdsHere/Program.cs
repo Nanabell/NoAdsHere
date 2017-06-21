@@ -74,7 +74,7 @@ namespace NoAdsHere
                 await Violations.Install(_provider);
 
                 await AntiAds.Install(_provider);
-                await AntiAds.StartServiceAsync();
+                await AntiAds.StartAsync();
 
                 await JobQueue.Install(_provider);
 

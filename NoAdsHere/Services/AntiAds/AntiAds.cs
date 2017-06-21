@@ -47,11 +47,19 @@ namespace NoAdsHere.Services.AntiAds
             return Task.CompletedTask;
         }
 
-        public static async Task StartServiceAsync()
+        public static async Task StartAsync()
         {
             await LoadActiveGuildsAsync();
             Logger.Info("AntiAds service started.");
             _client.MessageReceived += AdsHandler;
+        }
+
+        public static Task StopAsync()
+        {
+            _client.MessageReceived -= AdsHandler;
+            ActiveGuilds.Clear();
+            Logger.Info("AntiAds service stopped.");
+            return Task.CompletedTask;
         }
 
         private static async Task AdsHandler(SocketMessage socketMessage)
