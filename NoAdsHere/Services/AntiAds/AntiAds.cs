@@ -71,9 +71,11 @@ namespace NoAdsHere.Services.AntiAds
             var context = new CommandContext(_client, message);
             if (context.IsPrivate) return;
 
+            var rawmsg = Regex.Replace(context.Message.Content, @"[\u005C\u007F-\uFFFF\s]+", string.Empty);
+
             if (ActiveGuilds[BlockType.InstantInvite].Contains(context.Guild.Id))
             {
-                if (InstantInvite.IsMatch(context.Message.Content))
+                if (InstantInvite.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.InstantInvite))
                     {
                         await TryDelete(context);
@@ -82,7 +84,7 @@ namespace NoAdsHere.Services.AntiAds
             }
             if (ActiveGuilds[BlockType.TwitchClip].Contains(context.Guild.Id))
             {
-                if (TwitchClip.IsMatch(context.Message.Content))
+                if (TwitchClip.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.TwitchClip))
                     {
                         await TryDelete(context);
@@ -91,7 +93,7 @@ namespace NoAdsHere.Services.AntiAds
             }
             if (ActiveGuilds[BlockType.TwitchStream].Contains(context.Guild.Id))
             {
-                if (TwitchStream.IsMatch(context.Message.Content))
+                if (TwitchStream.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.TwitchStream))
                     {
                         await TryDelete(context);
@@ -100,7 +102,7 @@ namespace NoAdsHere.Services.AntiAds
             }
             if (ActiveGuilds[BlockType.TwitchVideo].Contains(context.Guild.Id))
             {
-                if (TwitchVideo.IsMatch(context.Message.Content))
+                if (TwitchVideo.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.TwitchVideo))
                     {
                         await TryDelete(context);
@@ -109,7 +111,7 @@ namespace NoAdsHere.Services.AntiAds
             }
             if (ActiveGuilds[BlockType.YoutubeLink].Contains(context.Guild.Id))
             {
-                if (YoutubeLink.IsMatch(context.Message.Content))
+                if (YoutubeLink.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.YoutubeLink))
                     {
                         await TryDelete(context);
