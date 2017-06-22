@@ -30,6 +30,14 @@ namespace NoAdsHere.Commands.Ungrouped
                 "You can find my source-code & Invite here: https://github.com/Nanabell/NoAdsHere\nPlease visit the Wiki tab for documentations.");
         }
 
+        [Command("Documentation"), Alias("Docs")]
+        [RequirePermission(AccessLevel.User)]
+        public async Task Docs()
+        {
+            await ReplyAsync(
+                "Documentation for NAH can be found on the Github-Wiki pages!\nhttps://github.com/Nanabell/NoAdsHere/wiki");
+        }
+
         [Command("My Points")]
         [RequirePermission(AccessLevel.User)]
         public async Task My_Points()
