@@ -19,7 +19,6 @@ namespace NoAdsHere
         private static Config _config;
         private static readonly Logger Logger = LogManager.GetLogger("CommandHandler");
 
-
         public static Task Install(IServiceProvider provider)
         {
             _provider = provider;
@@ -29,7 +28,7 @@ namespace NoAdsHere
             _config = _provider.GetService<Config>();
 
             _commands.Log += CommandLogger;
-            
+
             return Task.CompletedTask;
         }
 
@@ -77,6 +76,12 @@ namespace NoAdsHere
             switch (result)
             {
                 case SearchResult searchResult:
+                    if (searchResult.ErrorReason == "Unknown command")
+                    {
+                        Logger.Debug($"User {context.User} tried to use a unknown command in {context.Guild}/{context.Channel}");
+                        return;
+                    }
+                    response = searchResult.Error.ToString();
                     Logger.Debug($"Failed search result: {searchResult.ErrorReason}");
                     break;
 
