@@ -32,18 +32,19 @@ namespace NoAdsHere.Services.Violations
         public static async Task Add(ICommandContext context, BlockType blockType)
         {
             var violator = await _mongo.GetCollection<Violator>(_client).GetUserAsync(context.User as IGuildUser);
-            await DecreasePoints(context, violator);
-            await IncreasePoint(context, violator);
+            violator = await TryDecreasePoints(context, violator);
+            violator = await IncreasePoint(context, violator);
             await ExecutePenalty(context, violator, blockType);
         }
 
-        private static async Task IncreasePoint(ICommandContext context, Violator violator)
+        private static async Task<Violator> IncreasePoint(ICommandContext context, Violator violator)
         {
             var collection = _mongo.GetCollection<Violator>(_client);
             violator.LatestViolation = DateTime.UtcNow;
             violator.Points++;
             Logger.Info($"Increased points for {context.User} by 1 for a total of {violator.Points}");
             await collection.SaveAsync(violator);
+            return violator;
         }
 
         private static async Task ExecutePenalty(ICommandContext context, Violator violator, BlockType blockType)
@@ -168,16 +169,18 @@ namespace NoAdsHere.Services.Violations
             return decPoints;
         }
 
-        private static async Task DecreasePoints(ICommandContext context, Violator violator)
+        public static async Task<Violator> TryDecreasePoints(ICommandContext context, Violator violator)
         {
             var points = CalcDecreasingPoints(violator);
             if (points > 0)
             {
                 var collection = _mongo.GetCollection<Violator>(_client);
-                violator.Points = (points < violator.Points ? violator.Points - points : 0);
+                violator.LatestViolation = DateTime.UtcNow;
+                violator.Points = points < violator.Points ? violator.Points - points : 0;
                 Logger.Info($"Decreased points for {context.User} by {points} for a total of {violator.Points}");
                 await collection.SaveAsync(violator);
             }
+            return violator;
         }
     }
 }
