@@ -9,6 +9,8 @@ using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
+using NoAdsHere.Services.Violations;
+using static NoAdsHere.ConstSettings;
 
 namespace NoAdsHere.Commands.Ungrouped
 {
@@ -44,11 +46,14 @@ namespace NoAdsHere.Commands.Ungrouped
         {
             var violator = await _mongo.GetCollection<Violator>(Context.Client).GetUserAsync(Context.User as IGuildUser);
             var penalties = await _mongo.GetCollection<Penalty>(Context.Client).GetPenaltiesAsync(Context.Guild.Id);
+
+            violator = await Violations.TryDecreasePoints(Context, violator);
+
             var nextPenalty = penalties.OrderBy(p => p.RequiredPoints).FirstOrDefault(penalty => penalty.RequiredPoints > violator.Points);
 
             var until = TimeSpan.Zero;
             if (violator.Points > 0)
-                until = violator.LatestViolation.AddHours(12) - DateTime.Now;
+                until = violator.LatestViolation.AddHours(PointDecreaseHours) - DateTime.UtcNow;
             await ReplyAsync(
                 // ReSharper disable once UseFormatSpecifierInInterpolation
                 $"You currently have {violator.Points} points. {(until != TimeSpan.Zero ? $"You will lose one point in {until.ToString(@"hh'h'\:mm'm'\:ss's'")}" : "")}" +
