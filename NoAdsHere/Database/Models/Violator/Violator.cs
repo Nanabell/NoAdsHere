@@ -15,6 +15,6 @@ namespace NoAdsHere.Database.Models.Violator
         public ulong GuildId { get; set; }
         public ulong UserId { get; set; }
         public int Points { get; set; }
-        public DateTime LatestViolation { get; set; } = DateTime.Now;
+        public DateTime LatestViolation { get; set; } = DateTime.UtcNow;
     }
 }

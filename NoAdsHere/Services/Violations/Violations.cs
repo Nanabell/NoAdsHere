@@ -12,6 +12,7 @@ using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
 using NoAdsHere.Services.Penalties;
+using static NoAdsHere.ConstSettings;
 
 namespace NoAdsHere.Services.Violations
 {
@@ -39,7 +40,7 @@ namespace NoAdsHere.Services.Violations
         private static async Task IncreasePoint(ICommandContext context, Violator violator)
         {
             var collection = _mongo.GetCollection<Violator>(_client);
-            violator.LatestViolation = DateTime.Now;
+            violator.LatestViolation = DateTime.UtcNow;
             violator.Points++;
             Logger.Info($"Increased points for {context.User} by 1 for a total of {violator.Points}");
             await collection.SaveAsync(violator);
@@ -51,8 +52,7 @@ namespace NoAdsHere.Services.Violations
             var statsCollection = _mongo.GetCollection<Stats>(_client);
             var stats = await statsCollection.GetGuildStatsAsync(context.Guild);
             stats.Blocks++;
-            
-            
+
             foreach (var penalty in penalties.OrderBy(p => p.RequiredPoints))
             {
                 if (violator.Points != penalty.RequiredPoints) continue;
@@ -92,10 +92,9 @@ namespace NoAdsHere.Services.Violations
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-                
             }
             await statsCollection.SaveAsync(stats);
-            
+
             if (violator.Points >= penalties.Max(p => p.RequiredPoints))
             {
                 var violatorCollection = _mongo.GetCollection<Violator>(_client);
@@ -157,11 +156,11 @@ namespace NoAdsHere.Services.Violations
         {
             var decPoints = 0;
             var time = violator.LatestViolation;
-            while (DateTime.Now > time)
+            while (DateTime.UtcNow > time)
             {
-                if (DateTime.Now > time.AddHours(12))
+                if (DateTime.UtcNow > time.AddHours(PointDecreaseHours))
                 {
-                    time = time.AddHours(12);
+                    time = time.AddHours(PointDecreaseHours);
                     decPoints++;
                 }
                 else break;
