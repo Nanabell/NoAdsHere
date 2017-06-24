@@ -70,6 +70,13 @@ namespace NoAdsHere.Database
             return result2;
         }
 
+        public static async Task<List<Block>> GetGuildBlocksAsync(this IMongoCollection<Block> collection,
+            ulong guildId)
+        {
+            var cursor = await collection.FindAsync(f => f.GuildId == guildId);
+            return await cursor.ToListAsync();
+        }
+
         public static async Task<List<Block>> GetBlocksAsync(this IMongoCollection<Block> collection)
         {
             var cursor = await collection.FindAsync("{}");
