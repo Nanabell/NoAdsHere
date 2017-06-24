@@ -92,7 +92,7 @@ namespace NoAdsHere
                     var command = _commands.Search(context, argPos).Commands.First();
                     response = $":warning: There was an error parsing your command: `{parseResult.ErrorReason}`";
                     response +=
-                        $"\nCorrect Usage is: `{_config.CommandStrings.First()} {command.Alias} {string.Join(" ", command.Command.Parameters.Select(FormatParam)).Replace("`", "")}`";
+                        $"\nCorrect Usage is: `{_config.CommandStrings.First()}{command.Alias} {string.Join(" ", command.Command.Parameters.Select(FormatParam)).Replace("`", "")}`";
                     break;
 
                 case PreconditionResult preconditionResult:
