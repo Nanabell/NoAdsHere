@@ -129,7 +129,8 @@ namespace NoAdsHere.Commands.BotOwner
                 {
                     Context = Context,
                     Message = Context.Message as SocketUserMessage,
-                    Client = Context.Client as DiscordSocketClient
+                    Client = Context.Client as DiscordSocketClient,
+                    Mongo = _mongo
                 };
 
                 var sopts = ScriptOptions.Default;
@@ -161,6 +162,7 @@ namespace NoAdsHere.Commands.BotOwner
             public SocketGuild Guild => Channel.Guild;
             public SocketUser User => Message.Author;
             public DiscordSocketClient Client { get; set; }
+            public MongoClient Mongo { get; set; }
         }
 
 
