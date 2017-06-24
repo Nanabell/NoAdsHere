@@ -86,6 +86,7 @@ namespace NoAdsHere
         {
             var collection = _mongo.GetCollection<Penalty>(_client);
             var penalties = await collection.GetPenaltiesAsync(guild.Id);
+            var blocks = await _mongo.GetCollection<Block>(_client).GetGuildBlocksAsync(guild.Id);
             var newPenalties = new List<Penalty>();
 
             if (penalties.All(p => p.PenaltyId != 1))
@@ -111,6 +112,15 @@ namespace NoAdsHere
 
             if (newPenalties.Any())
                 await collection.InsertManyAsync(newPenalties);
+
+            if (!blocks.Any())
+            {
+                await guild.DefaultChannel.SendMessageAsync(
+                    "Thank you for inviting NAH. Please note that I'm currently in an Inactive state.\n" +
+                    $"Please head over to github for documentations & a quickstart guide how to enable me.*({_config.CommandStrings.First()}github)*\n" +
+                    "I've automatically added the default Penalties please change them to your needs!");
+            }
+            
         }
 
         private static async Task<IScheduler> StartQuartz()

@@ -9,6 +9,8 @@ using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
+using NoAdsHere.Services.Configuration;
+using Quartz.Impl.AdoJobStore.Common;
 
 namespace NoAdsHere.Commands.Ignores
 {
@@ -16,10 +18,28 @@ namespace NoAdsHere.Commands.Ignores
     public class IgnoreModule : ModuleBase
     {
         private readonly MongoClient _mongo;
+        private readonly Config _config;
 
-        public IgnoreModule(IServiceProvider provider)
+        public IgnoreModule(IServiceProvider provider, Config config)
         {
+            _config = config;
             _mongo = provider.GetService<MongoClient>();
+        }
+
+        [Command("Add")]
+        [RequirePermission(AccessLevel.HighModerator)]
+        [Priority(-1)]
+        public async Task AddHelp([Remainder] string test = null)
+        {
+            await ReplyAsync($"Correct Usage is: `{_config.CommandStrings.First()}Ignore Add <Type> <Target>`");
+        }
+        
+        [Command("Remove")]
+        [RequirePermission(AccessLevel.HighModerator)]
+        [Priority(-1)]
+        public async Task RemoveHelp([Remainder] string test = null)
+        {
+            await ReplyAsync($"Correct Usage is: `{_config.CommandStrings.First()}Ignore Remove <Type> <Target>`");
         }
 
         [Command("Add")]
