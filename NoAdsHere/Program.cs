@@ -84,6 +84,7 @@ namespace NoAdsHere
 
         private async Task JoinedGuild(SocketGuild guild)
         {
+            var logger = LogManager.GetLogger("AntiAds");
             var collection = _mongo.GetCollection<Penalty>(_client);
             var penalties = await collection.GetPenaltiesAsync(guild.Id);
             var blocks = await _mongo.GetCollection<Block>(_client).GetGuildBlocksAsync(guild.Id);
@@ -92,22 +93,22 @@ namespace NoAdsHere
             if (penalties.All(p => p.PenaltyId != 1))
             {
                 newPenalties.Add(new Penalty(guild.Id, 1, PenaltyType.Nothing, 1));
-                _logger.Info("Adding default info message penalty.");
+                logger.Info("Adding default info message penalty.");
             }
             if (penalties.All(p => p.PenaltyId != 2))
             {
                 newPenalties.Add(new Penalty(guild.Id, 2, PenaltyType.Warn, 3));
-                _logger.Info("Adding default warn message penalty.");
+                logger.Info("Adding default warn message penalty.");
             }
             if (penalties.All(p => p.PenaltyId != 3))
             {
                 newPenalties.Add(new Penalty(guild.Id, 3, PenaltyType.Kick, 5));
-                _logger.Info("Adding default kick penalty.");
+                logger.Info("Adding default kick penalty.");
             }
             if (penalties.All(p => p.PenaltyId != 4))
             {
                 newPenalties.Add(new Penalty(guild.Id, 4, PenaltyType.Ban, 6));
-                _logger.Info("Adding default ban penalty.");
+                logger.Info("Adding default ban penalty.");
             }
 
             if (newPenalties.Any())
