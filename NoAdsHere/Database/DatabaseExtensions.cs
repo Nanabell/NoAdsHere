@@ -112,7 +112,7 @@ namespace NoAdsHere.Database
 
             if (result != null)
                 return result;
-            await new Violator(guildId, userid).InsertAsync();
+            await collection.InsertOneAsync(new Violator(guildId, userid));
             var cursor2 = await collection.FindAsync(f => f.GuildId == guildId && f.UserId == userid);
             var result2 = await cursor2.SingleOrDefaultAsync();
             return result2;
