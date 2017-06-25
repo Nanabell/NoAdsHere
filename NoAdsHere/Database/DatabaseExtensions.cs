@@ -131,6 +131,12 @@ namespace NoAdsHere.Database
             return await cursor.ToListAsync();
         }
 
+        public static async Task<Master> GetMasterAsync(this IMongoCollection<Master> collection, ulong userId)
+        {
+            var cursor = await collection.FindAsync(f => f.UserId == userId);
+            return await cursor.SingleOrDefaultAsync();
+        }
+
         public static async Task<Stats> GetGuildStatsAsync(this IMongoCollection<Stats> collection, IGuild guild)
         {
             var cursor = await collection.FindAsync(f => f.GuildId == guild.Id);
