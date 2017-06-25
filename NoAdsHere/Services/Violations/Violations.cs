@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,7 +30,7 @@ namespace NoAdsHere.Services.Violations
 
         public static async Task Add(ICommandContext context, BlockType blockType)
         {
-            var violator = await _mongo.GetCollection<Violator>(_client).GetUserAsync(context.User as IGuildUser);
+            var violator = await _mongo.GetCollection<Violator>(_client).GetUserAsync(context.Guild.Id, context.User.Id);
             violator = await TryDecreasePoints(context, violator);
             violator = await IncreasePoint(context, violator);
             await ExecutePenalty(context, violator, blockType);
@@ -39,19 +38,18 @@ namespace NoAdsHere.Services.Violations
 
         private static async Task<Violator> IncreasePoint(ICommandContext context, Violator violator)
         {
-            var collection = _mongo.GetCollection<Violator>(_client);
             violator.LatestViolation = DateTime.UtcNow;
             violator.Points++;
-            Logger.Info($"Increased points for {context.User} by 1 for a total of {violator.Points}");
-            await collection.SaveAsync(violator);
+            Logger.Info($"{context.User}'s Points {violator.Points - 1} => {violator.Points}");
+            await violator.SaveAsync();
             return violator;
         }
 
         private static async Task ExecutePenalty(ICommandContext context, Violator violator, BlockType blockType)
         {
             var penalties = await _mongo.GetCollection<Penalty>(_client).GetPenaltiesAsync(violator.GuildId);
-            var statsCollection = _mongo.GetCollection<Stats>(_client);
-            var stats = await statsCollection.GetGuildStatsAsync(context.Guild);
+            var collection = _mongo.GetCollection<Stats>(_client);
+            var stats = await collection.GetGuildStatsAsync(context.Guild);
             stats.Blocks++;
 
             foreach (var penalty in penalties.OrderBy(p => p.RequiredPoints))
@@ -65,28 +63,28 @@ namespace NoAdsHere.Services.Violations
                         await MessagePenalty.SendAsync(context, message, GetTrigger(blockType),
                             autoDelete: penalty.AutoDelete);
                         Logger.Info(
-                            $"User {context.User} exceeded the limit for Penalty {penalty.PenaltyId}({penalty.RequiredPoints}) on {context.Guild}. Executing Penalty on Level Nothing");
+                            $"{context.User} reached Penalty Nothing {penalty.PenaltyId}({penalty.RequiredPoints}) in {context.Guild}/{context.Channel}.");
                         break;
 
                     case PenaltyType.Warn:
                         await MessagePenalty.SendAsync(context, message, GetTrigger(blockType),
                             ":warning:", penalty.AutoDelete);
                         Logger.Info(
-                            $"User {context.User} exceeded the limit for Penalty {penalty.PenaltyId}({penalty.RequiredPoints}) on {context.Guild}. Executing Penalty on Level Warn");
+                            $"{context.User} reached Penalty Warn {penalty.PenaltyId}({penalty.RequiredPoints}) in {context.Guild}/{context.Channel}");
                         stats.Warns++;
                         break;
 
                     case PenaltyType.Kick:
                         await KickPenalty.KickAsync(context, message, GetTrigger(blockType), autoDelete: penalty.AutoDelete);
                         Logger.Info(
-                            $"User {context.User} exceeded the limit for Penalty {penalty.PenaltyId}({penalty.RequiredPoints}) on {context.Guild}. Executing Penalty on Level Kick");
+                            $"{context.User} reached Penalty Kick {penalty.PenaltyId}({penalty.RequiredPoints}) in {context.Guild}/{context.Channel}");
                         stats.Kicks++;
                         break;
 
                     case PenaltyType.Ban:
                         await BanPenalty.BanAsync(context, message, GetTrigger(blockType), autoDelete: penalty.AutoDelete);
                         Logger.Info(
-                            $"User {context.User} exceeded the limit for Penalty {penalty.PenaltyId}({penalty.RequiredPoints}) on {context.Guild}. Executing Penalty on Level Kick");
+                            $"User {context.User} reached Penalty Ban {penalty.PenaltyId}({penalty.RequiredPoints}) in {context.Guild}/{context.Channel}");
                         stats.Bans++;
                         break;
 
@@ -94,13 +92,12 @@ namespace NoAdsHere.Services.Violations
                         throw new ArgumentOutOfRangeException();
                 }
             }
-            await statsCollection.SaveAsync(stats);
+            await stats.SaveAsync();
 
             if (violator.Points >= penalties.Max(p => p.RequiredPoints))
             {
-                var violatorCollection = _mongo.GetCollection<Violator>(_client);
-                await violatorCollection.DeleteAsync(violator);
-                Logger.Info($"User {context.User} reached the last penalty dropping from Database.");
+                await violator.DeleteAsync();
+                Logger.Info($"{context.User} reached the last penalty in {context.Guild}, dropping from Database.");
             }
         }
 
@@ -126,7 +123,7 @@ namespace NoAdsHere.Services.Violations
             }
         }
 
-        private static string GetTrigger(BlockType blockType)
+        public static string GetTrigger(BlockType blockType)
         {
             switch (blockType)
             {
@@ -172,14 +169,11 @@ namespace NoAdsHere.Services.Violations
         public static async Task<Violator> TryDecreasePoints(ICommandContext context, Violator violator)
         {
             var points = CalcDecreasingPoints(violator);
-            if (points > 0)
-            {
-                var collection = _mongo.GetCollection<Violator>(_client);
-                violator.LatestViolation = DateTime.UtcNow;
-                violator.Points = points < violator.Points ? violator.Points - points : 0;
-                Logger.Info($"Decreased points for {context.User} by {points} for a total of {violator.Points}");
-                await collection.SaveAsync(violator);
-            }
+            if (points <= 0) return violator;
+            violator.LatestViolation = DateTime.UtcNow;
+            violator.Points = points < violator.Points ? violator.Points - points : 0;
+            Logger.Info($"Decreased points for {context.User} by {points} for a total of {violator.Points}");
+            await violator.SaveAsync();
             return violator;
         }
     }

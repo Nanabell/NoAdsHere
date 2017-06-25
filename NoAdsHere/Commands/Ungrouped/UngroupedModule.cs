@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
 using MongoDB.Driver;
 using NoAdsHere.Common;
@@ -44,7 +43,7 @@ namespace NoAdsHere.Commands.Ungrouped
         [RequirePermission(AccessLevel.User)]
         public async Task My_Points()
         {
-            var violator = await _mongo.GetCollection<Violator>(Context.Client).GetUserAsync(Context.User as IGuildUser);
+            var violator = await _mongo.GetCollection<Violator>(Context.Client).GetUserAsync(Context.Guild.Id, Context.User.Id);
             var penalties = await _mongo.GetCollection<Penalty>(Context.Client).GetPenaltiesAsync(Context.Guild.Id);
 
             violator = await Violations.TryDecreasePoints(Context, violator);

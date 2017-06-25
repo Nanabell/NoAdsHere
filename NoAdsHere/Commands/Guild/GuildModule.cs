@@ -60,7 +60,7 @@ namespace NoAdsHere.Commands.Guild
         [RequirePermission(AccessLevel.Moderator)]
         public async Task Reset_Points()
         {
-            var violators = await _mongo.GetCollection<Violator>(Context.Client).GetAllByGuildAsync(Context.Guild);
+            var violators = await _mongo.GetCollection<Violator>(Context.Client).GetAllByGuildAsync(Context.Guild.Id);
             await ReplyAsync(
                 $"Are you sure you want to reset all points for all Users in {Context.Guild} ? *({violators.Count} total)*\n**Yes** - confirm\n**No** - cancel\n**30 sec timeout**");
             var response = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30),
@@ -84,7 +84,7 @@ namespace NoAdsHere.Commands.Guild
         public async Task Reset_User(IGuildUser user)
         {
             var collection = _mongo.GetCollection<Violator>(Context.Client);
-            var violator = await collection.GetUserAsync(user);
+            var violator = await collection.GetUserAsync(user.GuildId, user.Id);
             await collection.DeleteAsync(violator);
             var logger = LogManager.GetLogger("Violations");
             logger.Info($"Removed {user}'s entry for {Context.Guild}");

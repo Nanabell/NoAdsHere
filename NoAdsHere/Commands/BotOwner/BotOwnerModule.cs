@@ -86,12 +86,12 @@ namespace NoAdsHere.Commands.BotOwner
         [RequireOwner]
         public async Task Remove_Master(IUser user)
         {
-            var masters = await _mongo.GetCollection<Master>(Context.Client).GetMasterAsync(user.Id);
+            var master = await _mongo.GetCollection<Master>(Context.Client).GetMasterAsync(user.Id);
 
-            if (masters != null)
+            if (master != null)
             {
-                if (await masters.DeleteAsync())
-                    await ReplyAsync($"{user} removed from global Masters!");
+                await master.DeleteAsync();
+                await ReplyAsync($"{user} removed from global Masters!");
             }
             else
             {

@@ -14,12 +14,10 @@ namespace NoAdsHere.Database.Models.Global
         public ObjectId Id { get; set; }
         public ulong UserId { get; set; }
 
-        internal async Task<bool> DeleteAsync()
+        internal async Task DeleteAsync()
         {
             var collection = Mongo.GetCollection<Master>(Client);
-            
             await collection.DeleteAsync(this);
-            return true;
         }
 
         internal async Task<bool> InsertAsync()

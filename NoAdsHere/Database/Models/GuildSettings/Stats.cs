@@ -1,8 +1,9 @@
-﻿using MongoDB.Bson;
+﻿using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace NoAdsHere.Database.Models.GuildSettings
 {
-    public class Stats : IIndexed
+    public class Stats : DatabaseBase, IIndexed
     {
         public Stats(ulong guildId)
         {
@@ -14,5 +15,11 @@ namespace NoAdsHere.Database.Models.GuildSettings
         public uint Warns { get; set; }
         public uint Kicks { get; set; }
         public uint Bans { get; set; }
+
+        internal async Task SaveAsync()
+        {
+            var collection = Mongo.GetCollection<Stats>(Client);
+            await collection.SaveAsync(this);
+        }
     }
 }

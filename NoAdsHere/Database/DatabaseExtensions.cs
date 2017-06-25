@@ -105,23 +105,23 @@ namespace NoAdsHere.Database
             return result;
         }
 
-        public static async Task<Violator> GetUserAsync(this IMongoCollection<Violator> collection, IGuildUser user)
+        public static async Task<Violator> GetUserAsync(this IMongoCollection<Violator> collection, ulong guildId, ulong userid)
         {
-            var cursor = await collection.FindAsync(f => f.GuildId == user.Guild.Id && f.UserId == user.Id);
+            var cursor = await collection.FindAsync(f => f.GuildId == guildId && f.UserId == userid);
             var result = await cursor.SingleOrDefaultAsync();
 
             if (result != null)
                 return result;
-            await collection.InsertOneAsync(new Violator(user.Guild.Id, user.Id));
-            var cursor2 = await collection.FindAsync(f => f.GuildId == user.Guild.Id && f.UserId == user.Id);
+            await new Violator(guildId, userid).InsertAsync();
+            var cursor2 = await collection.FindAsync(f => f.GuildId == guildId && f.UserId == userid);
             var result2 = await cursor2.SingleOrDefaultAsync();
             return result2;
         }
 
         public static async Task<List<Violator>> GetAllByGuildAsync(this IMongoCollection<Violator> collection,
-            IGuild guild)
+            ulong guildId)
         {
-            var cursor = await collection.FindAsync(f => f.GuildId == guild.Id);
+            var cursor = await collection.FindAsync(f => f.GuildId == guildId);
             return await cursor.ToListAsync();
         }
 

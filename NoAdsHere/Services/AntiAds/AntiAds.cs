@@ -78,7 +78,7 @@ namespace NoAdsHere.Services.AntiAds
                 if (InstantInvite.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.InstantInvite))
                     {
-                        await TryDelete(context);
+                        await TryDelete(context, BlockType.InstantInvite);
                         await Violations.Violations.Add(context, BlockType.InstantInvite);
                     }
             }
@@ -87,7 +87,7 @@ namespace NoAdsHere.Services.AntiAds
                 if (TwitchClip.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.TwitchClip))
                     {
-                        await TryDelete(context);
+                        await TryDelete(context, BlockType.TwitchClip);
                         await Violations.Violations.Add(context, BlockType.TwitchClip);
                     }
             }
@@ -96,7 +96,7 @@ namespace NoAdsHere.Services.AntiAds
                 if (TwitchStream.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.TwitchStream))
                     {
-                        await TryDelete(context);
+                        await TryDelete(context, BlockType.TwitchStream);
                         await Violations.Violations.Add(context, BlockType.TwitchStream);
                     }
             }
@@ -105,7 +105,7 @@ namespace NoAdsHere.Services.AntiAds
                 if (TwitchVideo.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.TwitchVideo))
                     {
-                        await TryDelete(context);
+                        await TryDelete(context, BlockType.TwitchVideo);
                         await Violations.Violations.Add(context, BlockType.TwitchVideo);
                     }
             }
@@ -114,7 +114,7 @@ namespace NoAdsHere.Services.AntiAds
                 if (YoutubeLink.IsMatch(rawmsg))
                     if (await IsToDelete(context, BlockType.YoutubeLink))
                     {
-                        await TryDelete(context);
+                        await TryDelete(context, BlockType.YoutubeLink);
                         await Violations.Violations.Add(context, BlockType.YoutubeLink);
                     }
             }
@@ -125,7 +125,7 @@ namespace NoAdsHere.Services.AntiAds
             if (ActiveGuilds[type].Contains(guildId)) return false;
             ActiveGuilds[type].Add(guildId);
             await UpdateBlockEntry(type, guildId, true);
-            Logger.Info($"Enabling AntiAds type {type} for guild {_client.GetGuild(guildId)}");
+            Logger.Info($"Enabling AntiAds type {type} for guild {_client.GetGuild(guildId)}.");
             return true;
         }
 
@@ -134,7 +134,7 @@ namespace NoAdsHere.Services.AntiAds
             if (!ActiveGuilds[type].Contains(guildId)) return false;
             ActiveGuilds[type].Remove(guildId);
             await UpdateBlockEntry(type, guildId, false);
-            Logger.Info($"Disabling AntiAds type {type} for guild {_client.GetGuild(guildId)}");
+            Logger.Info($"Disabling AntiAds type {type} for guild {_client.GetGuild(guildId)}.");
             return true;
         }
 
@@ -155,20 +155,19 @@ namespace NoAdsHere.Services.AntiAds
                 .Any(r => r.IgnoredId == roleId));
         }
 
-        private static async Task TryDelete(ICommandContext context)
+        private static async Task TryDelete(ICommandContext context, BlockType blockType)
         {
             if (context.Channel.CheckChannelPermission(ChannelPermission.ManageMessages,
                 await context.Guild.GetCurrentUserAsync()))
             {
-                Logger.Info(
-                    $"Attempting to delete message with ID {context.Message.Id} by {context.User} in guild {context.Guild}.");
                 try
                 {
                     await context.Message.DeleteAsync();
+                    Logger.Info($"Deleted message {context.Message.Id} by {context.User} in {context.Guild}/{context.Channel}. Reason: {blockType}.");
                 }
                 catch (Exception e)
                 {
-                    Logger.Warn(e, $"Unable to delete message with ID {context.Message.Id}.");
+                    Logger.Warn(e, $"Failed to delete message {context.Message.Id} by {context.User} in {context.Guild}/{context.Channel}.");
                 }
             }
         }
@@ -192,11 +191,11 @@ namespace NoAdsHere.Services.AntiAds
             await PopulateDictionary();
             var blocks = await _mongo.GetCollection<Block>(_client).GetBlocksAsync();
 
-            foreach (var block in blocks)
+            foreach (var block in blocks.OrderBy(block => block.GuildId))
             {
                 if (!block.IsEnabled) continue;
                 ActiveGuilds[block.BlockType].Add(block.GuildId);
-                Logger.Info($"Guild {_client.GetGuild(block.GuildId)} added active list {block.BlockType}");
+                Logger.Info($"Guild {_client.GetGuild(block.GuildId)} added active list {block.BlockType}.");
             }
         }
 
