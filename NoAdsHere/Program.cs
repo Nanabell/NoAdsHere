@@ -54,6 +54,8 @@ namespace NoAdsHere
             _config = Config.Load();
             _mongo = CreateDatabaseConnection();
             _scheduler = await StartQuartz();
+            DatabaseBase.Mongo = _mongo;
+            DatabaseBase.Client = _client;
 
             _provider = ConfigureServices();
 
@@ -84,6 +86,7 @@ namespace NoAdsHere
 
         private async Task JoinedGuild(SocketGuild guild)
         {
+            var logger = LogManager.GetLogger("AntiAds");
             var collection = _mongo.GetCollection<Penalty>(_client);
             var penalties = await collection.GetPenaltiesAsync(guild.Id);
             var blocks = await _mongo.GetCollection<Block>(_client).GetGuildBlocksAsync(guild.Id);
@@ -92,22 +95,22 @@ namespace NoAdsHere
             if (penalties.All(p => p.PenaltyId != 1))
             {
                 newPenalties.Add(new Penalty(guild.Id, 1, PenaltyType.Nothing, 1));
-                _logger.Info("Adding default info message penalty.");
+                logger.Info("Adding default info message penalty.");
             }
             if (penalties.All(p => p.PenaltyId != 2))
             {
                 newPenalties.Add(new Penalty(guild.Id, 2, PenaltyType.Warn, 3));
-                _logger.Info("Adding default warn message penalty.");
+                logger.Info("Adding default warn message penalty.");
             }
             if (penalties.All(p => p.PenaltyId != 3))
             {
                 newPenalties.Add(new Penalty(guild.Id, 3, PenaltyType.Kick, 5));
-                _logger.Info("Adding default kick penalty.");
+                logger.Info("Adding default kick penalty.");
             }
             if (penalties.All(p => p.PenaltyId != 4))
             {
                 newPenalties.Add(new Penalty(guild.Id, 4, PenaltyType.Ban, 6));
-                _logger.Info("Adding default ban penalty.");
+                logger.Info("Adding default ban penalty.");
             }
 
             if (newPenalties.Any())
@@ -115,10 +118,19 @@ namespace NoAdsHere
 
             if (!blocks.Any())
             {
-                await guild.DefaultChannel.SendMessageAsync(
-                    "Thank you for inviting NAH. Please note that I'm currently in an Inactive state.\n" +
-                    $"Please head over to github for documentations & a quickstart guide how to enable me.*({_config.CommandStrings.First()}github)*\n" +
-                    "I've automatically added the default Penalties please change them to your needs!");
+                try
+                {
+                    await guild.DefaultChannel.SendMessageAsync(
+                        "Thank you for inviting NAH. Please note that I'm currently in an Inactive state.\n" +
+                        $"Please head over to github for documentations & a quickstart guide how to enable me.*({_config.CommandStrings.First()}github)*\n" +
+                        "I've automatically added the default Penalties please change them to your needs!");
+                    logger.Info($"Sent Joinmessage in {guild}/{guild.DefaultChannel}");
+                }
+                catch (Exception e)
+                {
+                    logger.Warn(e, $"Failed to send Joinmessage in {guild}/{guild.DefaultChannel}");
+                }
+
             }
             
         }
