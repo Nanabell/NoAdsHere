@@ -67,57 +67,61 @@ namespace NoAdsHere.Services.AntiAds
             var message = socketMessage as SocketUserMessage;
             if (message == null) return;
             if (message.Author.IsBot) return;
-
+            
             var context = new CommandContext(_client, message);
             if (context.IsPrivate) return;
 
-            var rawmsg = Regex.Replace(context.Message.Content, @"[\u005C\u007F-\uFFFF\s]+", string.Empty);
+            var _ = Task.Run(async () =>
+            {
+                var rawmsg = Regex.Replace(context.Message.Content, @"[\u005C\u007F-\uFFFF\s]+", string.Empty);
 
-            if (ActiveGuilds[BlockType.InstantInvite].Contains(context.Guild.Id))
-            {
-                if (InstantInvite.IsMatch(rawmsg))
-                    if (await IsToDelete(context, BlockType.InstantInvite))
-                    {
-                        await TryDelete(context, BlockType.InstantInvite);
-                        await Violations.Violations.Add(context, BlockType.InstantInvite);
-                    }
-            }
-            if (ActiveGuilds[BlockType.TwitchClip].Contains(context.Guild.Id))
-            {
-                if (TwitchClip.IsMatch(rawmsg))
-                    if (await IsToDelete(context, BlockType.TwitchClip))
-                    {
-                        await TryDelete(context, BlockType.TwitchClip);
-                        await Violations.Violations.Add(context, BlockType.TwitchClip);
-                    }
-            }
-            if (ActiveGuilds[BlockType.TwitchStream].Contains(context.Guild.Id))
-            {
-                if (TwitchStream.IsMatch(rawmsg))
-                    if (await IsToDelete(context, BlockType.TwitchStream))
-                    {
-                        await TryDelete(context, BlockType.TwitchStream);
-                        await Violations.Violations.Add(context, BlockType.TwitchStream);
-                    }
-            }
-            if (ActiveGuilds[BlockType.TwitchVideo].Contains(context.Guild.Id))
-            {
-                if (TwitchVideo.IsMatch(rawmsg))
-                    if (await IsToDelete(context, BlockType.TwitchVideo))
-                    {
-                        await TryDelete(context, BlockType.TwitchVideo);
-                        await Violations.Violations.Add(context, BlockType.TwitchVideo);
-                    }
-            }
-            if (ActiveGuilds[BlockType.YoutubeLink].Contains(context.Guild.Id))
-            {
-                if (YoutubeLink.IsMatch(rawmsg))
-                    if (await IsToDelete(context, BlockType.YoutubeLink))
-                    {
-                        await TryDelete(context, BlockType.YoutubeLink);
-                        await Violations.Violations.Add(context, BlockType.YoutubeLink);
-                    }
-            }
+                if (ActiveGuilds[BlockType.InstantInvite].Contains(context.Guild.Id))
+                {
+                    if (InstantInvite.IsMatch(rawmsg))
+                        if (await IsToDelete(context, BlockType.InstantInvite))
+                        {
+                            await TryDelete(context, BlockType.InstantInvite);
+                            await Violations.Violations.Add(context, BlockType.InstantInvite);
+                        }
+                }
+                if (ActiveGuilds[BlockType.TwitchClip].Contains(context.Guild.Id))
+                {
+                    if (TwitchClip.IsMatch(rawmsg))
+                        if (await IsToDelete(context, BlockType.TwitchClip))
+                        {
+                            await TryDelete(context, BlockType.TwitchClip);
+                            await Violations.Violations.Add(context, BlockType.TwitchClip);
+                        }
+                }
+                if (ActiveGuilds[BlockType.TwitchStream].Contains(context.Guild.Id))
+                {
+                    if (TwitchStream.IsMatch(rawmsg))
+                        if (await IsToDelete(context, BlockType.TwitchStream))
+                        {
+                            await TryDelete(context, BlockType.TwitchStream);
+                            await Violations.Violations.Add(context, BlockType.TwitchStream);
+                        }
+                }
+                if (ActiveGuilds[BlockType.TwitchVideo].Contains(context.Guild.Id))
+                {
+                    if (TwitchVideo.IsMatch(rawmsg))
+                        if (await IsToDelete(context, BlockType.TwitchVideo))
+                        {
+                            await TryDelete(context, BlockType.TwitchVideo);
+                            await Violations.Violations.Add(context, BlockType.TwitchVideo);
+                        }
+                }
+                if (ActiveGuilds[BlockType.YoutubeLink].Contains(context.Guild.Id))
+                {
+                    if (YoutubeLink.IsMatch(rawmsg))
+                        if (await IsToDelete(context, BlockType.YoutubeLink))
+                        {
+                            await TryDelete(context, BlockType.YoutubeLink);
+                            await Violations.Violations.Add(context, BlockType.YoutubeLink);
+                        }
+                }
+            });
+            await Task.CompletedTask;
         }
 
         public static async Task<bool> TryEnableGuild(BlockType type, ulong guildId)

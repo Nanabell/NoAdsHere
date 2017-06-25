@@ -19,12 +19,12 @@ namespace NoAdsHere.Services.Penalties
                 try
                 {
                     await ((IGuildUser)context.User).KickAsync();
-                    IUserMessage msg = null;
+                    IUserMessage msg;
                     if (self.GuildPermissions.UseExternalEmojis)
                         msg = await context.Channel.SendMessageAsync($"{emote} {context.User.Mention} {message}! Trigger: {trigger} {emote}");
                     else
                         msg = await context.Channel.SendMessageAsync($":boot: {context.User.Mention} {message}! Trigger: {trigger} :boot:");
-                    Logger.Info($"{context.User.Username} has been kicked from {context.Guild.Id}.");
+                    Logger.Info($"{context.User} has been kicked from {context.Guild}.");
 
                     if (msg != null)
                     {
@@ -36,8 +36,12 @@ namespace NoAdsHere.Services.Penalties
                 }
                 catch (Exception e)
                 {
-                    Logger.Warn($"Unable to kick {context.User}. {e.Message}");
+                    Logger.Warn(e, $"Unable to kick {context.User} from {context.Guild}");
                 }
+            }
+            else
+            {
+                Logger.Warn($"Unable to kick {context.User} from {context.Guild}, not enough permissions to kick");
             }
         }
     }
