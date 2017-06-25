@@ -116,10 +116,19 @@ namespace NoAdsHere
 
             if (!blocks.Any())
             {
-                await guild.DefaultChannel.SendMessageAsync(
-                    "Thank you for inviting NAH. Please note that I'm currently in an Inactive state.\n" +
-                    $"Please head over to github for documentations & a quickstart guide how to enable me.*({_config.CommandStrings.First()}github)*\n" +
-                    "I've automatically added the default Penalties please change them to your needs!");
+                try
+                {
+                    await guild.DefaultChannel.SendMessageAsync(
+                        "Thank you for inviting NAH. Please note that I'm currently in an Inactive state.\n" +
+                        $"Please head over to github for documentations & a quickstart guide how to enable me.*({_config.CommandStrings.First()}github)*\n" +
+                        "I've automatically added the default Penalties please change them to your needs!");
+                    logger.Info($"Sent Joinmessage in {guild}/{guild.DefaultChannel}");
+                }
+                catch (Exception e)
+                {
+                    logger.Warn(e, $"Failed to send Joinmessage in {guild}/{guild.DefaultChannel}");
+                }
+
             }
             
         }
