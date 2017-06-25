@@ -54,6 +54,8 @@ namespace NoAdsHere
             _config = Config.Load();
             _mongo = CreateDatabaseConnection();
             _scheduler = await StartQuartz();
+            DatabaseBase.Mongo = _mongo;
+            DatabaseBase.Client = _client;
 
             _provider = ConfigureServices();
 
