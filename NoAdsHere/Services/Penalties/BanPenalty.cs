@@ -20,12 +20,12 @@ namespace NoAdsHere.Services.Penalties
                 try
                 {
                     await context.Guild.AddBanAsync(context.User);
-                    IUserMessage msg = null;
+                    IUserMessage msg;
                     if (self.GuildPermissions.UseExternalEmojis)
                         msg = await context.Channel.SendMessageAsync($"<:banzy:316314495695716352> {context.User.Mention} {message}! Trigger: {trigger} <:banzy:316314495695716352>");
                     else
                         msg = await context.Channel.SendMessageAsync($":no_entry: {context.User.Mention} {message}! Trigger: {trigger} :no_entry:");
-                    Logger.Info($"{context.User.Username} has been banned from {context.Guild.Id}");
+                    Logger.Info($"{context.User} has been banned from {context.Guild}");
 
                     if (msg != null)
                     {
@@ -37,8 +37,12 @@ namespace NoAdsHere.Services.Penalties
                 }
                 catch (Exception e)
                 {
-                    Logger.Warn($"Unable to ban {context.User.Username}. {e.Message}");
+                    Logger.Warn(e, $"Unable to ban {context.User} from {context.Guild}");
                 }
+            }
+            else
+            {
+                Logger.Warn($"Unable to ban {context.User} from {context.Guild}, not enoguh permissions to ban");
             }
         }
     }
