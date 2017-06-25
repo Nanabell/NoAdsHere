@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
@@ -72,13 +71,8 @@ namespace NoAdsHere.Commands.BotOwner
         public async Task Add_Master(IUser user)
         {
             var newMaster = new Master(user.Id);
-            var collection = _mongo.GetCollection<Master>(Context.Client);
-
-            var masters = await collection.GetMastersAsync();
-
-            if (masters.All(m => m.UserId != user.Id))
+            if (await newMaster.InsertAsync())
             {
-                await collection.InsertOneAsync(newMaster);
                 await ReplyAsync($"{user} added to global Masters!");
             }
             else
@@ -92,13 +86,12 @@ namespace NoAdsHere.Commands.BotOwner
         [RequireOwner]
         public async Task Remove_Master(IUser user)
         {
-            var collection = _mongo.GetCollection<Master>(Context.Client);
-            var masters = await collection.GetMastersAsync();
+            var masters = await _mongo.GetCollection<Master>(Context.Client).GetMasterAsync(user.Id);
 
-            if (masters.Any(m => m.UserId == user.Id))
+            if (masters != null)
             {
-                await collection.DeleteAsync(masters.First(m => m.UserId == user.Id));
-                await ReplyAsync($"{user} removed from global Masters!");
+                if (await masters.DeleteAsync())
+                    await ReplyAsync($"{user} removed from global Masters!");
             }
             else
             {
