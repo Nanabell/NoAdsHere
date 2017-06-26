@@ -1,6 +1,7 @@
 # NoAdsHere
 NoAdsHere or NAH is a Discord bot that helps stop advertising in Discord servers. This project is still a Work-in-Progress. Contributions are welcome!
 
+### !!!READ GETTING STARTED DOWN BELOW BEFORE INVITING!!
 [Invite NAH to your server](https://discordapp.com/oauth2/authorize?client_id=316009507446718465&scope=bot&permissions=273414)
 
 [![Join NAH Center](https://discordapp.com/api/guilds/327183533460422716/embed.png?style=banner3)](https://discord.gg/tpqt4My)
