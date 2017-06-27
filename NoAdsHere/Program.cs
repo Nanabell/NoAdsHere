@@ -79,6 +79,9 @@ namespace NoAdsHere
                 await AntiAds.Install(_provider);
                 await AntiAds.StartAsync();
 
+                await FaqService.Install(_provider);
+                await FaqService.LoadFaqs();
+
                 await JobQueue.Install(_provider);
 
                 _readyExecuted = true;
