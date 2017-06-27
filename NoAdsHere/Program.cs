@@ -16,6 +16,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Discord.Addons.InteractiveCommands;
 using NoAdsHere.Common;
+using NoAdsHere.Services.FAQ;
 using Quartz;
 using Quartz.Impl;
 
@@ -157,6 +158,7 @@ namespace NoAdsHere
                 .AddSingleton(_config)
                 .AddSingleton(_mongo)
                 .AddSingleton(_scheduler)
+                .AddSingleton(new FaqSystem(_client, _mongo))
                 .AddSingleton(new InteractiveService(_client))
                 .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false, LogLevel = LogSeverity.Verbose, DefaultRunMode = RunMode.Sync}));
 

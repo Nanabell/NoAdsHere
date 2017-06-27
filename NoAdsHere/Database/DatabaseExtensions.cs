@@ -6,6 +6,7 @@ using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
 using System.Collections.Generic;
 using NoAdsHere.Common;
+using NoAdsHere.Database.Models.FAQ;
 using NoAdsHere.Database.Models.Global;
 
 namespace NoAdsHere.Database
@@ -153,6 +154,32 @@ namespace NoAdsHere.Database
         {
             var cursor = await collection.FindAsync("{}");
             return await cursor.ToListAsync();
+        }
+
+        public static async Task<GuildFaqEntry> GetGuildFaqAsync(this IMongoCollection<GuildFaqEntry> collection,
+            ulong guildId, string name)
+        {
+            var cursor = await collection.FindAsync(f => f.GuildId == guildId && f.Name == name.ToLower());
+            return await cursor.SingleOrDefaultAsync();
+        }
+
+        public static async Task<List<GuildFaqEntry>> GetGuildFaqsAsync(this IMongoCollection<GuildFaqEntry> collection,
+            ulong guildId)
+        {
+            var cursor = await collection.FindAsync(f => f.GuildId == guildId);
+            return await cursor.ToListAsync();
+        }
+        
+        public static async Task<List<GlobalFaqEntry>> GetGlobalFaqsAsync(this IMongoCollection<GlobalFaqEntry> collection)
+        {
+            var cursor = await collection.FindAsync("{}");
+            return await cursor.ToListAsync();
+        }
+        
+        public static async Task<GlobalFaqEntry> GetGlobalFaqAsync(this IMongoCollection<GlobalFaqEntry> collection, string name)
+        {
+            var cursor = await collection.FindAsync(f => f.Name == name.ToLower());
+            return await cursor.SingleOrDefaultAsync();
         }
     }
 }
