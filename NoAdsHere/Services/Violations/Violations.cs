@@ -55,7 +55,7 @@ namespace NoAdsHere.Services.Violations
             foreach (var penalty in penalties.OrderBy(p => p.RequiredPoints))
             {
                 if (violator.Points != penalty.RequiredPoints) continue;
-                var message = penalty.Message ?? GetDefaultMessage(blockType, penalty.PenaltyType);
+                var message = penalty.Message ?? GetDefaultMessage(penalty.PenaltyType);
 
                 switch (penalty.PenaltyType)
                 {
@@ -101,9 +101,8 @@ namespace NoAdsHere.Services.Violations
             }
         }
 
-        private static string GetDefaultMessage(BlockType blockType, PenaltyType penaltyType)
+        private static string GetDefaultMessage(PenaltyType penaltyType)
         {
-            //TODO: Implement dffrent Messages for diffrent Blocktypes.
             switch (penaltyType)
             {
                 case PenaltyType.Nothing:
@@ -150,7 +149,7 @@ namespace NoAdsHere.Services.Violations
             }
         }
 
-        private static int CalcDecreasingPoints(Violator violator)
+        public static async Task<Violator> TryDecreasePoints(ICommandContext context, Violator violator)
         {
             var decPoints = 0;
             var time = violator.LatestViolation;
@@ -158,21 +157,17 @@ namespace NoAdsHere.Services.Violations
             {
                 if (DateTime.UtcNow > time.AddHours(PointDecreaseHours))
                 {
+                    if (decPoints == violator.Points)
+                        break;
+                    
                     time = time.AddHours(PointDecreaseHours);
                     decPoints++;
+                    violator.Points = decPoints;
+                    violator.LatestViolation = time;
                 }
                 else break;
             }
-            return decPoints;
-        }
-
-        public static async Task<Violator> TryDecreasePoints(ICommandContext context, Violator violator)
-        {
-            var points = CalcDecreasingPoints(violator);
-            if (points <= 0) return violator;
-            violator.LatestViolation = DateTime.UtcNow;
-            violator.Points = points < violator.Points ? violator.Points - points : 0;
-            Logger.Info($"Decreased points for {context.User} by {points} for a total of {violator.Points}");
+            Logger.Info($"Decreased points for {context.User} by {decPoints} for a total of {violator.Points}");
             await violator.SaveAsync();
             return violator;
         }
