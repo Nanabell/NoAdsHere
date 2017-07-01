@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +11,7 @@ using NoAdsHere.Common;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
+using NoAdsHere.Services.Log;
 using NoAdsHere.Services.Penalties;
 using static NoAdsHere.ConstSettings;
 
@@ -17,14 +19,16 @@ namespace NoAdsHere.Services.Violations
 {
     public static class Violations
     {
-        private static DiscordSocketClient _client;
+        private static DiscordShardedClient _client;
         private static MongoClient _mongo;
+        private static LogChannelService _logChannelService;
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
         public static Task Install(IServiceProvider provider)
         {
-            _client = provider.GetService<DiscordSocketClient>();
+            _client = provider.GetService<DiscordShardedClient>();
             _mongo = provider.GetService<MongoClient>();
+            _logChannelService = provider.GetService<LogChannelService>();
             return Task.CompletedTask;
         }
 
@@ -57,34 +61,50 @@ namespace NoAdsHere.Services.Violations
                 if (violator.Points != penalty.RequiredPoints) continue;
                 var message = penalty.Message ?? GetDefaultMessage(penalty.PenaltyType);
 
+
+                string logresponse;
                 switch (penalty.PenaltyType)
                 {
                     case PenaltyType.Nothing:
-                        await MessagePenalty.SendAsync(context, message, GetTrigger(blockType),
+                        await MessagePenalty.SendWithEmoteAsync(context, message, GetTrigger(blockType),
                             autoDelete: penalty.AutoDelete);
-                        Logger.Info(
-                            $"{context.User} reached Penalty Nothing {penalty.PenaltyId}({penalty.RequiredPoints}) in {context.Guild}/{context.Channel}.");
+                        logresponse =
+                            $"{context.User} reached Penalty {penalty.PenaltyId} (Nothing {penalty.RequiredPoints}p) in {context.Guild}/{context.Channel}.";
+                        Logger.Info(logresponse);
+                        await _logChannelService.LogMessageAsync(_client, _client.GetShardFor(context.Guild),
+                            Emote.Parse("<:NoAds:330796107540201472>"), logresponse);
                         break;
 
                     case PenaltyType.Warn:
-                        await MessagePenalty.SendAsync(context, message, GetTrigger(blockType),
-                            ":warning:", penalty.AutoDelete);
-                        Logger.Info(
-                            $"{context.User} reached Penalty Warn {penalty.PenaltyId}({penalty.RequiredPoints}) in {context.Guild}/{context.Channel}");
+                        await MessagePenalty.SendWithEmoteAsync(context, message, GetTrigger(blockType),
+                            Emote.Parse("<:Warn:330799457371160579>"), penalty.AutoDelete);
+                        logresponse =
+                            $"{context.User} reached Penalty {penalty.PenaltyId} (Warn {penalty.RequiredPoints}p) in {context.Guild}/{context.Channel}.";
+                        Logger.Info(logresponse);
+                        await _logChannelService.LogMessageAsync(_client, _client.GetShardFor(context.Guild),
+                            Emote.Parse("<:Warn:330799457371160579>"), logresponse);
                         stats.Warns++;
                         break;
 
                     case PenaltyType.Kick:
-                        await KickPenalty.KickAsync(context, message, GetTrigger(blockType), autoDelete: penalty.AutoDelete);
-                        Logger.Info(
-                            $"{context.User} reached Penalty Kick {penalty.PenaltyId}({penalty.RequiredPoints}) in {context.Guild}/{context.Channel}");
+                        await KickPenalty.KickAsync(context, message, GetTrigger(blockType),
+                            autoDelete: penalty.AutoDelete);
+                        logresponse =
+                            $"{context.User} reached Penalty {penalty.PenaltyId} (Kick {penalty.RequiredPoints}p) in {context.Guild}/{context.Channel}";
+                        Logger.Info(logresponse);
+                        await _logChannelService.LogMessageAsync(_client, _client.GetShardFor(context.Guild),
+                            Emote.Parse("<:Kick:330793607919566852>"), logresponse);
                         stats.Kicks++;
                         break;
 
                     case PenaltyType.Ban:
-                        await BanPenalty.BanAsync(context, message, GetTrigger(blockType), autoDelete: penalty.AutoDelete);
-                        Logger.Info(
-                            $"User {context.User} reached Penalty Ban {penalty.PenaltyId}({penalty.RequiredPoints}) in {context.Guild}/{context.Channel}");
+                        await BanPenalty.BanAsync(context, message, GetTrigger(blockType),
+                            autoDelete: penalty.AutoDelete);
+                        logresponse =
+                            $"{context.User} reached Penalty {penalty.PenaltyId} (Ban {penalty.RequiredPoints}p) in {context.Guild}/{context.Channel}";
+                        Logger.Info(logresponse);
+                        await _logChannelService.LogMessageAsync(_client, _client.GetShardFor(context.Guild),
+                            Emote.Parse("<:Ban:330793436309487626>"), logresponse);
                         stats.Bans++;
                         break;
 

@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
 using NLog;
-using Quartz;
 using System;
 using System.Threading.Tasks;
 
@@ -11,7 +10,7 @@ namespace NoAdsHere.Services.Penalties
     {
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
-        public static async Task BanAsync(ICommandContext context, string message, string trigger, string emote = "<:banzy:316314495695716352>", bool autoDelete = false)
+        public static async Task BanAsync(ICommandContext context, string message, string trigger, Emote emote = null, bool autoDelete = false)
         {
             var self = await context.Guild.GetCurrentUserAsync();
 
@@ -21,8 +20,9 @@ namespace NoAdsHere.Services.Penalties
                 {
                     await context.Guild.AddBanAsync(context.User);
                     IUserMessage msg;
-                    if (self.GuildPermissions.UseExternalEmojis)
-                        msg = await context.Channel.SendMessageAsync($"<:banzy:316314495695716352> {context.User.Mention} {message}! Trigger: {trigger} <:banzy:316314495695716352>");
+                    if (emote == null) emote = Emote.Parse("<:Ban:330793436309487626>");
+                    if (self.GuildPermissions.UseExternalEmojis && emote != null)
+                        msg = await context.Channel.SendMessageAsync($"<:{emote.Name}:{emote.Id}> {context.User.Mention} {message}! Trigger: {trigger} <:{emote.Name}:{emote.Id}>");
                     else
                         msg = await context.Channel.SendMessageAsync($":no_entry: {context.User.Mention} {message}! Trigger: {trigger} :no_entry:");
                     Logger.Info($"{context.User} has been banned from {context.Guild}");

@@ -13,7 +13,7 @@ namespace NoAdsHere.Services.FAQ
 {
     public static class FaqService
     {
-        private static DiscordSocketClient _client;
+        private static DiscordShardedClient _client;
         private static CommandService _commandService;
         private static IServiceProvider _provider;
         private static readonly Logger Logger = LogManager.GetLogger("FAQ");
@@ -21,7 +21,7 @@ namespace NoAdsHere.Services.FAQ
         public static Task Install(IServiceProvider provider)
         {
             _provider = provider;
-            _client = provider.GetService<DiscordSocketClient>();
+            _client = provider.GetService<DiscordShardedClient>();
             _commandService = new CommandService(new CommandServiceConfig {DefaultRunMode = RunMode.Async});
             return Task.CompletedTask;
         }
@@ -40,9 +40,8 @@ namespace NoAdsHere.Services.FAQ
                 return;
             if (!message.HasStringPrefix("?fa", ref argPos))
                 return;
-            
-            var context = new SocketCommandContext(_client, message);
-            if (context.IsPrivate) 
+            var context = new ShardedCommandContext(_client, message);
+            if (context.IsPrivate)
                 return;
             if (!context.Channel.CheckChannelPermission(ChannelPermission.SendMessages, context.Guild.CurrentUser))
                 return;
@@ -52,9 +51,6 @@ namespace NoAdsHere.Services.FAQ
             if (!result.IsSuccess)
                 Logger.Warn(result);
         }
-        
-        
-        
     }
 
     internal class FaqCommands : ModuleBase

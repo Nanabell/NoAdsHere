@@ -15,10 +15,10 @@ namespace NoAdsHere.Services.FAQ
 {
     public class FaqSystem
     {
-        private readonly DiscordSocketClient _client;
+        private readonly DiscordShardedClient _client;
         private readonly MongoClient _mongo;
 
-        public FaqSystem(DiscordSocketClient client, MongoClient mongo)
+        public FaqSystem(DiscordShardedClient client, MongoClient mongo)
         {
             _client = client;
             _mongo = mongo;

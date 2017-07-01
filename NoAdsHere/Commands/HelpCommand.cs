@@ -46,7 +46,7 @@ namespace NoAdsHere.Commands
                 sb.AppendLine($"**{group.Key}**: {string.Join(" ", commands.Distinct())}");
             }
             sb.AppendLine(
-                $"\nTo use commands do `{_config.CommandStrings.First()}<group> <command>`.");
+                $"\nTo use commands do `{_config.Prefix.First()}<group> <command>`.");
 
             await ReplyAsync($"{sb}");
         }
@@ -73,7 +73,7 @@ namespace NoAdsHere.Commands
                 {
                     sb.AppendLine("Usage");
                     sb.AppendLine(
-                        $"\t{_config.CommandStrings.First()}{(command.Module.IsSubmodule ? $"{command.Module.Name} " : "")}{command.Name} " +
+                        $"\t{_config.Prefix.First()}{(command.Module.IsSubmodule ? $"{command.Module.Name} " : "")}{command.Name} " +
                         string.Join(" ", command.Parameters.Select(FormatParam)).Replace("`", ""));
                     sb.AppendLine("Summary");
                     sb.AppendLine($"\t{command.Summary ?? "No Summary"}");

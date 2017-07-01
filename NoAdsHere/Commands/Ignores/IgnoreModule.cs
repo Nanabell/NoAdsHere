@@ -31,7 +31,7 @@ namespace NoAdsHere.Commands.Ignores
         [Priority(-1)]
         public async Task AddHelp([Remainder] string test = null)
         {
-            await ReplyAsync($"Correct Usage is: `{_config.CommandStrings.First()}Ignore Add <Type> <Target>`");
+            await ReplyAsync($"Correct Usage is: `{_config.Prefix.First()}Ignore Add <Type> <Target>`");
         }
         
         [Command("Remove")]
@@ -39,7 +39,7 @@ namespace NoAdsHere.Commands.Ignores
         [Priority(-1)]
         public async Task RemoveHelp([Remainder] string test = null)
         {
-            await ReplyAsync($"Correct Usage is: `{_config.CommandStrings.First()}Ignore Remove <Type> <Target>`");
+            await ReplyAsync($"Correct Usage is: `{_config.Prefix.First()}Ignore Remove <Type> <Target>`");
         }
 
         [Command("Add")]

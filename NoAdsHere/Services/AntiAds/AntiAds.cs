@@ -19,44 +19,71 @@ namespace NoAdsHere.Services.AntiAds
     public static class AntiAds
     {
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
-        private static DiscordSocketClient _client;
+        private static DiscordShardedClient _client;
         private static MongoClient _mongo;
-
+        private static readonly Dictionary<BlockType, List<ulong>> ActiveGuilds = new Dictionary<BlockType, List<ulong>>(0);
+        
         private static readonly Regex InstantInvite =
             new Regex(
                 @"(?:(?i)discord(?:(?:\.|.?dot.?)(?i)gg|app(?:\.|.?dot.?)com\/invite)\/(?<id>([\w]{10,16}|[a-zA-Z1-9]{4,8})))",
                 RegexOptions.Compiled);
-
         private static readonly Regex TwitchStream = new Regex(@"(?i)twitch\.(?i)tv\/(#)?([a-zA-Z0-9][\w]{2,24})",
             RegexOptions.Compiled);
-
         private static readonly Regex TwitchVideo = new Regex(@"(?i)twitch\.(?i)tv\/(?i)videos\/(#)?([0-9]{2,24})",
             RegexOptions.Compiled);
-
         private static readonly Regex TwitchClip = new Regex(@"(?i)clips\.(?i)twitch\.(?i)tv\/(#)?([a-zA-Z0-9][\w]{4,50})",
             RegexOptions.Compiled);
-
-        private static readonly Regex YoutubeLink = new Regex(@"(?i)youtu(?:\.(?i)be|be\.com)\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)", RegexOptions.Compiled);
-
-        private static readonly Dictionary<BlockType, List<ulong>> ActiveGuilds = new Dictionary<BlockType, List<ulong>>(0);
+        private static readonly Regex YoutubeLink =
+            new Regex(@"(?i)youtu(?:\.(?i)be|be\.com)\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)",
+                RegexOptions.Compiled);
 
         public static Task Install(IServiceProvider provider)
         {
-            _client = provider.GetService<DiscordSocketClient>();
+            _client = provider.GetService<DiscordShardedClient>();
             _mongo = provider.GetService<MongoClient>();
             return Task.CompletedTask;
         }
 
         public static async Task StartAsync()
         {
-            await LoadActiveGuildsAsync();
-            Logger.Info("AntiAds service started.");
+            Logger.Info("Loading Blocktypes into ActiveGuilds Dictionary");
+            await PopulateDictionary();
+            Logger.Info("Hooking GuildAvailable event to Populate Active Guilds Dictionary");
+            _client.GuildAvailable += GuildLoader;
+            
             _client.MessageReceived += AdsHandler;
+            Logger.Info("AntiAds service started.");
+        }
+        
+        private static Task PopulateDictionary()
+        {
+            foreach (BlockType type in Enum.GetValues(typeof(BlockType)))
+                ActiveGuilds.Add(type, new List<ulong>(0));
+            return Task.CompletedTask;
+        }
+
+        private static async Task GuildLoader(SocketGuild socketGuild)
+        {
+            if (ActiveGuilds.Keys.Any(blocktype => !ActiveGuilds[blocktype].Contains(socketGuild.Id)))
+            {
+                var blocks = await _mongo.GetCollection<Block>(_client.GetShardFor(socketGuild)).GetGuildBlocksAsync(socketGuild.Id);
+                foreach (var block in blocks.OrderBy(block => block.GuildId))
+                {
+                    if (!block.IsEnabled) continue;
+                    ActiveGuilds[block.BlockType].Add(block.GuildId);
+                    Logger.Info($"Guild {socketGuild}({socketGuild.Id}) added active list {block.BlockType}.");
+                }
+            }
+            else
+            {
+                Logger.Debug($"Guild {socketGuild} already active AntiAds");
+            }
         }
 
         public static Task StopAsync()
         {
             _client.MessageReceived -= AdsHandler;
+            _client.GuildAvailable -= GuildLoader;
             ActiveGuilds.Clear();
             Logger.Info("AntiAds service stopped.");
             return Task.CompletedTask;
@@ -141,6 +168,19 @@ namespace NoAdsHere.Services.AntiAds
             Logger.Info($"Disabling AntiAds type {type} for guild {_client.GetGuild(guildId)}.");
             return true;
         }
+        
+        private static async Task UpdateBlockEntry(BlockType type, ulong guildId, bool isEnabled)
+        {
+            var collection = _mongo.GetCollection<Block>(_client);
+            var block = await collection.GetBlockAsync(guildId, type);
+
+            if (isEnabled != block.IsEnabled)
+            {
+                block.IsEnabled = isEnabled;
+                await collection.SaveAsync(block);
+                Logger.Info("Updated block collection!");
+            }
+        }
 
         private static async Task<bool> IsToDelete(ICommandContext context, BlockType blockType)
         {
@@ -174,42 +214,6 @@ namespace NoAdsHere.Services.AntiAds
                     Logger.Warn(e, $"Failed to delete message {context.Message.Id} by {context.User} in {context.Guild}/{context.Channel}.");
                 }
             }
-        }
-
-        private static async Task UpdateBlockEntry(BlockType type, ulong guildId, bool isEnabled)
-        {
-            var collection = _mongo.GetCollection<Block>(_client);
-            var block = await collection.GetBlockAsync(guildId, type);
-
-            if (isEnabled != block.IsEnabled)
-            {
-                block.IsEnabled = isEnabled;
-                await collection.SaveAsync(block);
-                Logger.Info("Updated block collection!");
-            }
-        }
-
-        private static async Task LoadActiveGuildsAsync()
-        {
-            Logger.Info("Loading active guilds...");
-            await PopulateDictionary();
-            var blocks = await _mongo.GetCollection<Block>(_client).GetBlocksAsync();
-
-            foreach (var block in blocks.OrderBy(block => block.GuildId))
-            {
-                if (!block.IsEnabled) continue;
-                ActiveGuilds[block.BlockType].Add(block.GuildId);
-                Logger.Info($"Guild {_client.GetGuild(block.GuildId)} added active list {block.BlockType}.");
-            }
-        }
-
-        private static Task PopulateDictionary()
-        {
-            foreach (BlockType type in Enum.GetValues(typeof(BlockType)))
-            {
-                ActiveGuilds.Add(type, new List<ulong>(0));
-            }
-            return Task.CompletedTask;
         }
     }
 }

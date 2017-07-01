@@ -30,14 +30,14 @@ namespace NoAdsHere.Commands.BotOwner
         public async Task Shutdown()
         {
             await ReplyAsync("*Shutting down..*");
-            var client = Context.Client as DiscordSocketClient;
+            var client = Context.Client as DiscordShardedClient;
             if (client != null)
             {
                 var _ = StopAsync(client);
             }
         }
 
-        private static async Task StopAsync(DiscordSocketClient client)
+        private static async Task StopAsync(DiscordShardedClient client)
         {
             await CommandHandler.StopHandler();
             
@@ -59,7 +59,7 @@ namespace NoAdsHere.Commands.BotOwner
             foreach (var guild in await Context.Client.GetGuildsAsync())
             {
                 counter++;
-                await PenaltyModule.Restore(_mongo, Context.Client as DiscordSocketClient, guild as SocketGuild);
+                await PenaltyModule.Restore(_mongo, Context.Client as DiscordShardedClient, guild as SocketGuild);
 
             }
             await ReplyAsync($"{counter} guilds have been reset.");
@@ -122,7 +122,7 @@ namespace NoAdsHere.Commands.BotOwner
                 {
                     Context = Context,
                     Message = Context.Message as SocketUserMessage,
-                    Client = Context.Client as DiscordSocketClient,
+                    Client = Context.Client as DiscordShardedClient,
                     Mongo = _mongo
                 };
 
@@ -154,7 +154,7 @@ namespace NoAdsHere.Commands.BotOwner
             public SocketTextChannel Channel => Message.Channel as SocketTextChannel;
             public SocketGuild Guild => Channel.Guild;
             public SocketUser User => Message.Author;
-            public DiscordSocketClient Client { get; set; }
+            public DiscordShardedClient Client { get; set; }
             public MongoClient Mongo { get; set; }
         }
 

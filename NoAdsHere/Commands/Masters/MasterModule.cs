@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
@@ -30,7 +29,7 @@ namespace NoAdsHere.Commands.Masters
             {
                 var collection = _mongo.GetCollection<Penalty>(Context.Client);
                 await collection.DeleteManyAsync(f => f.GuildId == guildId);
-                await PenaltyModule.Restore(_mongo, Context.Client as DiscordSocketClient, guild as SocketGuild);
+                await PenaltyModule.Restore(_mongo, Context.Client as DiscordShardedClient, guild as SocketGuild);
                 await ReplyAsync($"Guild {guild} has been reset to default penalties");
             }          
         }

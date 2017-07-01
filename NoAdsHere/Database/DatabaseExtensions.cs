@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Discord;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
 using System.Collections.Generic;
+using Discord.WebSocket;
 using NoAdsHere.Common;
 using NoAdsHere.Database.Models.FAQ;
 using NoAdsHere.Database.Models.Global;
@@ -22,9 +24,10 @@ namespace NoAdsHere.Database
     }
 
     public static class DatabaseExtensions
-    {
+    {   
         public static IMongoCollection<T> GetCollection<T>(this MongoClient mongo, IDiscordClient client)
         {
+            if (client.CurrentUser == null) throw new ArgumentNullException(nameof(client.CurrentUser));
             var dbname = client.CurrentUser.Username.Replace(" ", "");
             var db = mongo.GetDatabase(dbname);
             return db.GetCollection<T>(typeof(T).Name);

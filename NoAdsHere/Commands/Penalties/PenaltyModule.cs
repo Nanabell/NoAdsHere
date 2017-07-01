@@ -11,7 +11,6 @@ using NoAdsHere.Database.Models.GuildSettings;
 using Discord.WebSocket;
 using System.Collections.Generic;
 using NLog;
-using NLog.Fluent;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
 
@@ -94,7 +93,7 @@ namespace NoAdsHere.Commands.Penalties
             {
                 await collection.DeleteAsync(penalty);
             }
-            await Restore(_mongo, Context.Client as DiscordSocketClient, Context.Guild as SocketGuild);
+            await Restore(_mongo, Context.Client as DiscordShardedClient, Context.Guild as SocketGuild);
 
             await ReplyAsync("Penalties have been restored to default.");
         }

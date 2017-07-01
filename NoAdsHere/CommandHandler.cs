@@ -8,8 +8,10 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using NLog.Fluent;
 using NoAdsHere.Common;
 using NoAdsHere.Services.Configuration;
+using NoAdsHere.Services.Events;
 using ParameterInfo = Discord.Commands.ParameterInfo;
 
 namespace NoAdsHere
@@ -18,43 +20,38 @@ namespace NoAdsHere
     {
         private static IServiceProvider _provider;
         private static CommandService _commands;
-        private static DiscordSocketClient _client;
+        private static DiscordShardedClient _client;
         private static Config _config;
         private static readonly Logger Logger = LogManager.GetLogger("CommandHandler");
 
         public static Task Install(IServiceProvider provider)
         {
             _provider = provider;
-            _client = _provider.GetService<DiscordSocketClient>();
-            _client.MessageReceived += ProccessCommandAsync;
+            _client = _provider.GetService<DiscordShardedClient>();
             _commands = _provider.GetService<CommandService>();
             _config = _provider.GetService<Config>();
 
-            _commands.Log += CommandLogger;
-
-            return Task.CompletedTask;
-        }
-
-        private static Task CommandLogger(LogMessage message)
-        {
-            var logger = LogManager.GetLogger("Command");
-            if (message.Exception == null)
-                logger.Info(message.Message);
-            else
-                logger.Warn(message.Exception, message.Message);
+            _commands.Log += EventHandlers.CommandLogger;
 
             return Task.CompletedTask;
         }
 
         public static async Task ConfigureAsync()
         {
-            Logger.Info("Command service started.");
+            Logger.Info("Started MessageReceived Handler");
+            _client.MessageReceived += ProccessCommandAsync;
+            Logger.Info("Loading Command-Modules from Assembly");
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
+
+            Logger.Info("Started CommandHandler");
         }
 
         public static Task StopHandler()
         {
+            Logger.Info("Unloading Message Handler");
             _client.MessageReceived -= ProccessCommandAsync;
+            
+            Logger.Info("Stopped CommandHandler");
             return Task.CompletedTask;
         }
 
@@ -66,9 +63,9 @@ namespace NoAdsHere
             var argPos = 0;
             if (!ParseTriggers(message, ref argPos)) return;
 
-            var context = new SocketCommandContext(_client, message);
-
-            if (context.IsPrivate) return;
+            var context = new ShardedCommandContext(_client, message);
+            if (context.IsPrivate)
+                return;
 
             if (!context.Channel.CheckChannelPermission(ChannelPermission.SendMessages, context.Guild.CurrentUser))
                 return;
@@ -92,7 +89,7 @@ namespace NoAdsHere
                     var command = _commands.Search(context, argPos).Commands.First();
                     response = $":warning: There was an error parsing your command: `{parseResult.ErrorReason}`";
                     response +=
-                        $"\nCorrect Usage is: `{_config.CommandStrings.First()}{command.Alias} {string.Join(" ", command.Command.Parameters.Select(FormatParam)).Replace("`", "")}`";
+                        $"\nCorrect Usage is: `{_config.Prefix.First()}{command.Alias} {string.Join(" ", command.Command.Parameters.Select(FormatParam)).Replace("`", "")}`";
                     break;
 
                 case PreconditionResult preconditionResult:
@@ -118,15 +115,7 @@ namespace NoAdsHere
         {
             var flag = false;
             if (message.HasMentionPrefix(_client.CurrentUser, ref argPos)) flag = true;
-            else
-            {
-                foreach (var prefix in _config.CommandStrings)
-                {
-                    if (!message.HasStringPrefix(prefix, ref argPos)) continue;
-                    flag = true;
-                    break;
-                }
-            }
+            else if (message.HasStringPrefix(_config.Prefix, ref argPos)) flag = true;
             return flag;
         }
         

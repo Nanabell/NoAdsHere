@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using NLog;
@@ -17,17 +16,14 @@ namespace NoAdsHere.Services.Configuration
         [JsonProperty("token")]
         public string Token { get; set; }
 
-        [JsonProperty("command_activation_strings")]
-        public IEnumerable<string> CommandStrings { get; set; } = new[]
-        {
-            "?nah"
-        };
+        [JsonProperty("command_prefix")]
+        public string Prefix { get; set; } = "?nah";
 
         [JsonProperty("command_on_mention")]
         public bool TriggerOnMention { get; set; } = true;
-
-        [JsonProperty("channels")]
-        public IEnumerable<ulong> ChannelWhitelist { get; set; } = new ulong[0];
+        
+        [JsonProperty("shards")]
+        public int TotalShards { get; set; } = 1;
 
         public class ConfigDatabase
         {
@@ -52,6 +48,18 @@ namespace NoAdsHere.Services.Configuration
 
         [JsonProperty("db")]
         public ConfigDatabase Database { get; set; } = new ConfigDatabase();
+
+        public class ConfigWebHookLogger
+        {
+            [JsonProperty("id")]
+            public ulong Id { get; set; }
+
+            [JsonProperty("token")]
+            public string Token { get; set; } = "";
+        }
+
+        [JsonProperty("webhook")]
+        public ConfigWebHookLogger WebHookLogger { get; set; } = new ConfigWebHookLogger();
 
         public static Config Load()
         {
