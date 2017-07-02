@@ -23,8 +23,8 @@ namespace NoAdsHere.Commands.Guild
 
         public GuildModule(InteractiveService interactiveService, MongoClient mongo)
         {
-            if (interactiveService != null) _interactiveService = interactiveService;
-            if (mongo != null) _mongo = mongo;
+            if (interactiveService != null) {_interactiveService = interactiveService;}
+            if (mongo != null) {_mongo = mongo;}
         }
 
         [Command("Statistics"), Alias("Stats")]
@@ -68,7 +68,7 @@ namespace NoAdsHere.Commands.Guild
 
             if (response.Content.ToLower() == "yes")
             {
-                var result = await ClearPoints(Context);
+                var result = await ClearPoints(Context).ConfigureAwait(false);
                 await ReplyAsync($"{result.DeletedCount} {(result.DeletedCount > 1 ? "entries" : "entry")} deleted!");
                 var logger = LogManager.GetLogger("Violations");
                 logger.Info($"Removed all [{result.DeletedCount}] Violator entries for {Context.Guild}");

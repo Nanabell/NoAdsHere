@@ -20,7 +20,6 @@ namespace NoAdsHere.Services.Events
     public static class EventHandlers
     {
         private static DiscordShardedClient _client;
-        private static IServiceProvider _provider;
         private static MongoClient _mongo;
         private static Config _config;
         private static LogChannelService _logger;
@@ -48,28 +47,27 @@ namespace NoAdsHere.Services.Events
 
         public static async Task StartServiceHandlers(IServiceProvider provider)
         {
-            _provider = provider;
-            _logger = _provider.GetService<LogChannelService>();
+            _logger = provider.GetService<LogChannelService>();
             _config = provider.GetService<Config>();
-            _mongo = _provider.GetService<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
 
             Logger.Info("Installing CommandHandler");
-            await CommandHandler.Install(_provider);
+            await CommandHandler.Install(provider);
             await CommandHandler.ConfigureAsync();
             
             Logger.Info("Installing FAQ Service");
-            await FaqService.Install(_provider);
+            await FaqService.Install(provider);
             await FaqService.LoadFaqs();
             
             Logger.Info("Installing AntiAds Service");
-            await AntiAds.AntiAds.Install(_provider);
+            await AntiAds.AntiAds.Install(provider);
             await AntiAds.AntiAds.StartAsync();
             
             Logger.Info("Installing Violations Service");
-            await Violations.Violations.Install(_provider);
+            await Violations.Violations.Install(provider);
             
             Logger.Info("Loading JobQueue");
-            await JobQueue.Install(_provider);
+            await JobQueue.Install(provider);
             
             _client.JoinedGuild += JoinedGuild;
             _client.LeftGuild += LeftGuild;

@@ -133,9 +133,10 @@ namespace NoAdsHere.Commands.BotOwner
                 var script = CSharpScript.Create(cs, sopts, typeof(Globals));
                 script.Compile();
                 var result = await script.RunAsync(globals);
-                
+
                 if (!string.IsNullOrWhiteSpace(result?.ReturnValue?.ToString()))
-                    await SendEmbedAsync(BuildEmbed("Evaluation Result", result.ReturnValue.ToString(), 2), msg);
+                    await SendEmbedAsync(BuildEmbed("Evaluation Result", result.ReturnValue.ToString(), 2), msg)
+                        .ConfigureAwait(false);
                 else
                     await SendEmbedAsync(BuildEmbed("Evaluation Successful", "No result was returned.", 2), msg);
             }

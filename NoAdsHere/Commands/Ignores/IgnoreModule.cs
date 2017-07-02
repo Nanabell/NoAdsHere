@@ -209,9 +209,6 @@ namespace NoAdsHere.Commands.Ignores
                 case "tclip":
                     return BlockType.TwitchClip;
 
-                case "all":
-                    return BlockType.All;
-
                 default:
                     return BlockType.All;
             }

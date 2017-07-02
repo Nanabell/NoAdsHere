@@ -27,7 +27,6 @@ namespace NoAdsHere
         private Config _config;
         private MongoClient _mongo;
         private readonly Logger _logger = LogManager.GetLogger("Core");
-        private IServiceProvider _provider;
         private IScheduler _scheduler;
 
         public async Task RunAsync()
@@ -35,7 +34,7 @@ namespace NoAdsHere
             _config = Config.Load();
             
             _logger.Info($"Creating Discord Sharded Client with {_config.TotalShards} Shards");
-            _client = new DiscordShardedClient(new DiscordSocketConfig()
+            _client = new DiscordShardedClient(new DiscordSocketConfig
             {
                 AlwaysDownloadUsers = true,
                 TotalShards = _config.TotalShards,
@@ -51,12 +50,12 @@ namespace NoAdsHere
 
             
             _mongo = CreateDatabaseConnection();
-            _scheduler = await StartQuartz();
+            _scheduler = await StartQuartz().ConfigureAwait(false);
             DatabaseBase.Mongo = _mongo;
             DatabaseBase.Client = _client;
 
-            _provider = ConfigureServices();
-            await EventHandlers.StartServiceHandlers(_provider);
+            var provider = ConfigureServices();
+            await EventHandlers.StartServiceHandlers(provider);
 
             await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();

@@ -93,7 +93,7 @@ namespace NoAdsHere.Commands.Penalties
             {
                 await collection.DeleteAsync(penalty);
             }
-            await Restore(_mongo, Context.Client as DiscordShardedClient, Context.Guild as SocketGuild);
+            await Restore(_mongo, Context.Client as DiscordShardedClient, Context.Guild as SocketGuild).ConfigureAwait(false);
 
             await ReplyAsync("Penalties have been restored to default.");
         }

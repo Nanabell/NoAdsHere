@@ -37,7 +37,7 @@ namespace NoAdsHere.Services.Violations
             var violator = await _mongo.GetCollection<Violator>(_client).GetUserAsync(context.Guild.Id, context.User.Id);
             violator = await TryDecreasePoints(context, violator);
             violator = await IncreasePoint(context, violator);
-            await ExecutePenalty(context, violator, blockType);
+            await ExecutePenalty(context, violator, blockType).ConfigureAwait(false);
         }
 
         private static async Task<Violator> IncreasePoint(ICommandContext context, Violator violator)

@@ -74,6 +74,12 @@ namespace NoAdsHere.Services.Configuration
             throw new InvalidOperationException("Configuration file created; insert token and restart.");
         }
 
+        [JsonProperty("point_decrease_hours")]
+        public double PointDecreaseHours { get; set; } = 12;
+        
+        [JsonProperty("max_levenshtein_distance")]
+        public int MaxLevenshteinDistance { get; set; } = 4;
+
         public static Config LoadFrom(string path)
         {
             Logger.Info($"Loading configuration from {path}");

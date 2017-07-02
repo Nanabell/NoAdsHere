@@ -105,45 +105,45 @@ namespace NoAdsHere.Services.AntiAds
                 if (ActiveGuilds[BlockType.InstantInvite].Contains(context.Guild.Id))
                 {
                     if (InstantInvite.IsMatch(rawmsg))
-                        if (await IsToDelete(context, BlockType.InstantInvite))
+                        if (await IsToDelete(context, BlockType.InstantInvite).ConfigureAwait(false))
                         {
-                            await TryDelete(context, BlockType.InstantInvite);
+                            await TryDelete(context, BlockType.InstantInvite).ConfigureAwait(false);
                             await Violations.Violations.Add(context, BlockType.InstantInvite);
                         }
                 }
                 if (ActiveGuilds[BlockType.TwitchClip].Contains(context.Guild.Id))
                 {
                     if (TwitchClip.IsMatch(rawmsg))
-                        if (await IsToDelete(context, BlockType.TwitchClip))
+                        if (await IsToDelete(context, BlockType.TwitchClip).ConfigureAwait(false))
                         {
-                            await TryDelete(context, BlockType.TwitchClip);
+                            await TryDelete(context, BlockType.TwitchClip).ConfigureAwait(false);
                             await Violations.Violations.Add(context, BlockType.TwitchClip);
                         }
                 }
                 if (ActiveGuilds[BlockType.TwitchStream].Contains(context.Guild.Id))
                 {
                     if (TwitchStream.IsMatch(rawmsg))
-                        if (await IsToDelete(context, BlockType.TwitchStream))
+                        if (await IsToDelete(context, BlockType.TwitchStream).ConfigureAwait(false))
                         {
-                            await TryDelete(context, BlockType.TwitchStream);
+                            await TryDelete(context, BlockType.TwitchStream).ConfigureAwait(false);
                             await Violations.Violations.Add(context, BlockType.TwitchStream);
                         }
                 }
                 if (ActiveGuilds[BlockType.TwitchVideo].Contains(context.Guild.Id))
                 {
                     if (TwitchVideo.IsMatch(rawmsg))
-                        if (await IsToDelete(context, BlockType.TwitchVideo))
+                        if (await IsToDelete(context, BlockType.TwitchVideo).ConfigureAwait(false))
                         {
-                            await TryDelete(context, BlockType.TwitchVideo);
+                            await TryDelete(context, BlockType.TwitchVideo).ConfigureAwait(false);
                             await Violations.Violations.Add(context, BlockType.TwitchVideo);
                         }
                 }
                 if (ActiveGuilds[BlockType.YoutubeLink].Contains(context.Guild.Id))
                 {
                     if (YoutubeLink.IsMatch(rawmsg))
-                        if (await IsToDelete(context, BlockType.YoutubeLink))
+                        if (await IsToDelete(context, BlockType.YoutubeLink).ConfigureAwait(false))
                         {
-                            await TryDelete(context, BlockType.YoutubeLink);
+                            await TryDelete(context, BlockType.YoutubeLink).ConfigureAwait(false);
                             await Violations.Violations.Add(context, BlockType.YoutubeLink);
                         }
                 }
@@ -155,7 +155,7 @@ namespace NoAdsHere.Services.AntiAds
         {
             if (ActiveGuilds[type].Contains(guildId)) return false;
             ActiveGuilds[type].Add(guildId);
-            await UpdateBlockEntry(type, guildId, true);
+            await UpdateBlockEntry(type, guildId, true).ConfigureAwait(false);
             Logger.Info($"Enabling AntiAds type {type} for guild {_client.GetGuild(guildId)}.");
             return true;
         }
@@ -164,7 +164,7 @@ namespace NoAdsHere.Services.AntiAds
         {
             if (!ActiveGuilds[type].Contains(guildId)) return false;
             ActiveGuilds[type].Remove(guildId);
-            await UpdateBlockEntry(type, guildId, false);
+            await UpdateBlockEntry(type, guildId, false).ConfigureAwait(false);
             Logger.Info($"Disabling AntiAds type {type} for guild {_client.GetGuild(guildId)}.");
             return true;
         }

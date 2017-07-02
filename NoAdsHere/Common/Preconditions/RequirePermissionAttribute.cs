@@ -21,7 +21,7 @@ namespace NoAdsHere.Common.Preconditions
 
         public override async Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            var level = await GetLevel(context, services.GetService<MongoClient>());
+            var level = await GetLevel(context, services.GetService<MongoClient>()).ConfigureAwait(false);
 
             return level >= _level ? PreconditionResult.FromSuccess() : PreconditionResult.FromError($"Insufficient permissions! Required level: {_level}");
         }

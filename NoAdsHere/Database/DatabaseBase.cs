@@ -5,7 +5,8 @@ namespace NoAdsHere.Database
 {
     public abstract class DatabaseBase
     {
-        public static MongoClient Mongo;
-        public static DiscordShardedClient Client;
+        public static MongoClient Mongo { get; set; }
+
+        public static DiscordShardedClient Client { get; set; }
     }
 }

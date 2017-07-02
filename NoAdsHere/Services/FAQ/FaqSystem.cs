@@ -26,8 +26,8 @@ namespace NoAdsHere.Services.FAQ
 
         internal async Task<string> GetFaqResponse(ulong guildId, string faqName)
         {
-            var gEntry = await GetGlobalFaqEntryAsync(faqName);
-            var lEntry = await GetGuildFaqEntryAsync(guildId, faqName);
+            var gEntry = await GetGlobalFaqEntryAsync(faqName).ConfigureAwait(false);
+            var lEntry = await GetGuildFaqEntryAsync(guildId, faqName).ConfigureAwait(false);
             if (gEntry != null)
                 return gEntry.Content;
             return lEntry != null ? lEntry.Content : "No FAQ Entry found.";
@@ -35,8 +35,8 @@ namespace NoAdsHere.Services.FAQ
 
         internal async Task<string> FuzzyGetFaqResponse(ulong guildId, string name)
         {
-            var gEntry = await FuzzyGetGlobalEntryAsync(name);
-            var lEntry = await FuzzyGetGuildEntryAsync(guildId, name);
+            var gEntry = await FuzzyGetGlobalEntryAsync(name).ConfigureAwait(false);
+            var lEntry = await FuzzyGetGuildEntryAsync(guildId, name).ConfigureAwait(false);
             if (gEntry != null)
                 return gEntry.Content;
             return lEntry != null ? lEntry.Content : "No FAQ Entry found.";
@@ -54,8 +54,8 @@ namespace NoAdsHere.Services.FAQ
                 LastUsed = DateTime.MinValue,
                 UseCount = 0
             };
-            if (await GetGlobalFaqEntryAsync(name) != null) return false;
-            if (await GetGuildFaqEntryAsync(context.Guild.Id, name) != null) return false;
+            if (await GetGlobalFaqEntryAsync(name).ConfigureAwait(false) != null) return false;
+            if (await GetGuildFaqEntryAsync(context.Guild.Id, name).ConfigureAwait(false) != null) return false;
             
             var collection = _mongo.GetCollection<GuildFaqEntry>(_client);
             await collection.InsertOneAsync(lEntry);

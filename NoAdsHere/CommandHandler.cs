@@ -108,16 +108,13 @@ namespace NoAdsHere
             }
 
             if (response != null)
+            {
                 await context.Channel.SendMessageAsync(response);
+            }
         }
 
         private static bool ParseTriggers(IUserMessage message, ref int argPos)
-        {
-            var flag = false;
-            if (message.HasMentionPrefix(_client.CurrentUser, ref argPos)) flag = true;
-            else if (message.HasStringPrefix(_config.Prefix, ref argPos)) flag = true;
-            return flag;
-        }
+            => message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasStringPrefix(_config.Prefix, ref argPos);
         
         private static string FormatParam(ParameterInfo parameter)
         {
