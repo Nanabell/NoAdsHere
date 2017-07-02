@@ -182,12 +182,12 @@ namespace NoAdsHere.Services.Violations
                     
                     time = time.AddHours(PointDecreaseHours);
                     decPoints++;
-                    violator.Points = decPoints;
+                    violator.Points = violator.Points - decPoints <= 0 ? 0 : violator.Points - decPoints;
                     violator.LatestViolation = time;
                 }
                 else break;
             }
-            Logger.Info($"Decreased points for {context.User} by {decPoints} for a total of {violator.Points}");
+            Logger.Info($"Decreased {context.User}'s points({violator.Points + decPoints}) by {decPoints} for a total of {violator.Points}");
             await violator.SaveAsync();
             return violator;
         }
