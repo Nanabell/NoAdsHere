@@ -9,7 +9,7 @@ using MoreLinq;
 using NoAdsHere.Common;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.FAQ;
-using static NoAdsHere.ConstSettings;
+using NoAdsHere.Services.Configuration;
 
 namespace NoAdsHere.Services.FAQ
 {
@@ -17,11 +17,13 @@ namespace NoAdsHere.Services.FAQ
     {
         private readonly DiscordShardedClient _client;
         private readonly MongoClient _mongo;
+        private readonly Config _config;
 
-        public FaqSystem(DiscordShardedClient client, MongoClient mongo)
+        public FaqSystem(DiscordShardedClient client, MongoClient mongo, Config config)
         {
             _client = client;
             _mongo = mongo;
+            _config = config;
         }
 
         internal async Task<string> GetFaqResponse(ulong guildId, string faqName)
@@ -73,7 +75,7 @@ namespace NoAdsHere.Services.FAQ
                 LastUsed = DateTime.MinValue,
                 UseCount = 0
             };
-            if (await GetGlobalFaqEntryAsync(name) != null) return false;
+            if (await GetGlobalFaqEntryAsync(name).ConfigureAwait(false) != null) return false;
 
             var collection = _mongo.GetCollection<GlobalFaqEntry>(_client);
             await collection.InsertOneAsync(gEntry);
@@ -111,7 +113,7 @@ namespace NoAdsHere.Services.FAQ
                 guildEntry => LevenshteinDistance.Compute(name, guildEntry.Name));
             var entry = entryDictionary.MinBy(pair => pair.Value);
 
-            return entry.Value <= MaxLevenshteinDistance ? entry.Key : null;
+            return entry.Value <= _config.MaxLevenshteinDistance ? entry.Key : null;
         }
         
         internal async Task<Dictionary<GuildFaqEntry, int>> GetSimilarGuildEntries(ulong guildId, string name)
@@ -119,7 +121,7 @@ namespace NoAdsHere.Services.FAQ
             var guildEntries = await _mongo.GetCollection<GuildFaqEntry>(_client).GetGuildFaqsAsync(guildId);
             var entryDictionary = guildEntries.ToDictionary(guildEntry => guildEntry,
                 guildEntry => LevenshteinDistance.Compute(name, guildEntry.Name));
-            return entryDictionary.Where(pair => pair.Value <= MaxLevenshteinDistance).OrderBy(pair => pair.Value)
+            return entryDictionary.Where(pair => pair.Value <= _config.MaxLevenshteinDistance).OrderBy(pair => pair.Value)
                 .ToDictionary();
         }
         
@@ -130,7 +132,7 @@ namespace NoAdsHere.Services.FAQ
                 globalEntry => LevenshteinDistance.Compute(name, globalEntry.Name));
             var entry = entryDictionary.MinBy(pair => pair.Value);
 
-            return entry.Value <= MaxLevenshteinDistance ? entry.Key : null;
+            return entry.Value <= _config.MaxLevenshteinDistance ? entry.Key : null;
         }
         
         internal async Task<Dictionary<GlobalFaqEntry, int>> GetSimilarGlobalEntries(string name)
@@ -138,7 +140,7 @@ namespace NoAdsHere.Services.FAQ
             var guildEntries = await _mongo.GetCollection<GlobalFaqEntry>(_client).GetGlobalFaqsAsync();
             var entryDictionary = guildEntries.ToDictionary(globalEntry => globalEntry,
                 globalEntry => LevenshteinDistance.Compute(name, globalEntry.Name));
-            return entryDictionary.Where(pair => pair.Value <= MaxLevenshteinDistance).OrderBy(pair => pair.Value)
+            return entryDictionary.Where(pair => pair.Value <= _config.MaxLevenshteinDistance).OrderBy(pair => pair.Value)
                 .ToDictionary();
         }
     }

@@ -8,8 +8,8 @@ using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
+using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.Violations;
-using static NoAdsHere.ConstSettings;
 
 namespace NoAdsHere.Commands.Ungrouped
 {
@@ -17,10 +17,12 @@ namespace NoAdsHere.Commands.Ungrouped
     public class UngroupedModule : ModuleBase
     {
         private readonly MongoClient _mongo;
+        private readonly Config _config;
 
-        public UngroupedModule(MongoClient mongo)
+        public UngroupedModule(MongoClient mongo, Config config)
         {
             _mongo = mongo;
+            _config = config;
         }
 
         [Command("Github")]
@@ -52,7 +54,7 @@ namespace NoAdsHere.Commands.Ungrouped
 
             var until = TimeSpan.Zero;
             if (violator.Points > 0)
-                until = violator.LatestViolation.AddHours(PointDecreaseHours) - DateTime.UtcNow;
+                until = violator.LatestViolation.AddHours(_config.PointDecreaseHours) - DateTime.UtcNow;
             await ReplyAsync(
                 // ReSharper disable once UseFormatSpecifierInInterpolation
                 $"You currently have {violator.Points} points. {(until != TimeSpan.Zero ? $"You will lose one point in {until.ToString(@"hh'h'\:mm'm'\:ss's'")}" : "")}" +

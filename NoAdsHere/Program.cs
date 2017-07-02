@@ -87,7 +87,7 @@ namespace NoAdsHere
                 .AddSingleton(_mongo)
                 .AddSingleton(new LogChannelService(_config))
                 .AddSingleton(_scheduler)
-                .AddSingleton(new FaqSystem(_client, _mongo))
+                .AddSingleton(new FaqSystem(_client, _mongo, _config))
                 .AddSingleton(new InteractiveService(_client.Shards.First()))
                 .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false, LogLevel = LogSeverity.Verbose, DefaultRunMode = RunMode.Sync}));
 

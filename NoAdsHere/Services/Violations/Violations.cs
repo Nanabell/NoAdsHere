@@ -11,9 +11,9 @@ using NoAdsHere.Common;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
+using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.LogService;
 using NoAdsHere.Services.Penalties;
-using static NoAdsHere.ConstSettings;
 
 namespace NoAdsHere.Services.Violations
 {
@@ -22,6 +22,7 @@ namespace NoAdsHere.Services.Violations
         private static DiscordShardedClient _client;
         private static MongoClient _mongo;
         private static LogChannelService _logChannelService;
+        private static Config _config;
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
         public static Task Install(IServiceProvider provider)
@@ -29,14 +30,15 @@ namespace NoAdsHere.Services.Violations
             _client = provider.GetService<DiscordShardedClient>();
             _mongo = provider.GetService<MongoClient>();
             _logChannelService = provider.GetService<LogChannelService>();
+            _config = provider.GetService<Config>();
             return Task.CompletedTask;
         }
 
         public static async Task Add(ICommandContext context, BlockType blockType)
         {
             var violator = await _mongo.GetCollection<Violator>(_client).GetUserAsync(context.Guild.Id, context.User.Id);
-            violator = await TryDecreasePoints(context, violator);
-            violator = await IncreasePoint(context, violator);
+            violator = await TryDecreasePoints(context, violator).ConfigureAwait(false);
+            violator = await IncreasePoint(context, violator).ConfigureAwait(false);
             await ExecutePenalty(context, violator, blockType).ConfigureAwait(false);
         }
 
@@ -175,12 +177,12 @@ namespace NoAdsHere.Services.Violations
             var time = violator.LatestViolation;
             while (DateTime.UtcNow > time)
             {
-                if (DateTime.UtcNow > time.AddHours(PointDecreaseHours))
+                if (DateTime.UtcNow > time.AddHours(_config.PointDecreaseHours))
                 {
                     if (decPoints == violator.Points)
                         break;
                     
-                    time = time.AddHours(PointDecreaseHours);
+                    time = time.AddHours(_config.PointDecreaseHours);
                     decPoints++;
                     violator.Points = violator.Points - decPoints <= 0 ? 0 : violator.Points - decPoints;
                     violator.LatestViolation = time;

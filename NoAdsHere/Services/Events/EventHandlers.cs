@@ -134,7 +134,7 @@ namespace NoAdsHere.Services.Events
 
         public static async Task JoinedGuild(SocketGuild guild)
         {
-            await JoinLog(guild);
+            await JoinLog(guild).ConfigureAwait(false);
             var logger = LogManager.GetLogger("AntiAds");
             var collection = _mongo.GetCollection<Penalty>(_client);
             var penalties = await collection.GetPenaltiesAsync(guild.Id);
@@ -190,7 +190,7 @@ namespace NoAdsHere.Services.Events
         
         private static async Task LeftGuild(SocketGuild socketGuild)
         {
-            await LeaveLog(socketGuild);
+            await LeaveLog(socketGuild).ConfigureAwait(false);
         }
         private static async Task LeaveLog(SocketGuild guild)
         {

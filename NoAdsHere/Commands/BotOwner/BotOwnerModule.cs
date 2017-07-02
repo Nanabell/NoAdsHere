@@ -113,8 +113,8 @@ namespace NoAdsHere.Commands.BotOwner
             }
             else
                 cs = code;
-            
-            var msg = await SendEmbedAsync(BuildEmbed("Evaluating...", null, 2));
+
+            var msg = await SendEmbedAsync(BuildEmbed("Evaluating...", null, 2)).ConfigureAwait(false);
 
             try
             {
@@ -138,13 +138,13 @@ namespace NoAdsHere.Commands.BotOwner
                     await SendEmbedAsync(BuildEmbed("Evaluation Result", result.ReturnValue.ToString(), 2), msg)
                         .ConfigureAwait(false);
                 else
-                    await SendEmbedAsync(BuildEmbed("Evaluation Successful", "No result was returned.", 2), msg);
+                    await SendEmbedAsync(BuildEmbed("Evaluation Successful", "No result was returned.", 2), msg).ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 await SendEmbedAsync(
                     BuildEmbed("Evaluation Failure", string.Concat("**", e.GetType().ToString(), "**: ", e.Message), 1),
-                    msg);
+                    msg).ConfigureAwait(false);
             }
         }
         

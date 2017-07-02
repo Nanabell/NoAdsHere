@@ -47,7 +47,7 @@ namespace NoAdsHere.Services.AntiAds
         public static async Task StartAsync()
         {
             Logger.Info("Loading Blocktypes into ActiveGuilds Dictionary");
-            await PopulateDictionary();
+            await PopulateDictionary().ConfigureAwait(false);
             Logger.Info("Hooking GuildAvailable event to Populate Active Guilds Dictionary");
             _client.GuildAvailable += GuildLoader;
             
@@ -148,7 +148,7 @@ namespace NoAdsHere.Services.AntiAds
                         }
                 }
             });
-            await Task.CompletedTask;
+            await Task.CompletedTask.ConfigureAwait(false);
         }
 
         public static async Task<bool> TryEnableGuild(BlockType type, ulong guildId)
