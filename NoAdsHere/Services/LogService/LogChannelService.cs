@@ -2,16 +2,14 @@
 using Discord;
 using Discord.Webhook;
 using Discord.WebSocket;
-using NLog;
 using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.Events;
 
-namespace NoAdsHere.Services.Log
+namespace NoAdsHere.Services.LogService
 {
     public class LogChannelService
     {
         private readonly DiscordWebhookClient _client;
-        private readonly Logger _logger = LogManager.GetLogger("Webhook");
         public LogChannelService(Config config)
         {
             _client = new DiscordWebhookClient(config.WebHookLogger.Id, config.WebHookLogger.Token);

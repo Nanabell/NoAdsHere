@@ -11,7 +11,7 @@ using NoAdsHere.Common;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Database.Models.Violator;
-using NoAdsHere.Services.Log;
+using NoAdsHere.Services.LogService;
 using NoAdsHere.Services.Penalties;
 using static NoAdsHere.ConstSettings;
 

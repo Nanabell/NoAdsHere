@@ -12,7 +12,7 @@ using NoAdsHere.Database;
 using Discord.Addons.InteractiveCommands;
 using NoAdsHere.Services.Events;
 using NoAdsHere.Services.FAQ;
-using NoAdsHere.Services.Log;
+using NoAdsHere.Services.LogService;
 using Quartz;
 using Quartz.Impl;
 

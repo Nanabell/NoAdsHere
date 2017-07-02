@@ -12,7 +12,7 @@ using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.FAQ;
-using NoAdsHere.Services.Log;
+using NoAdsHere.Services.LogService;
 using NoAdsHere.Services.Penalties;
 
 namespace NoAdsHere.Services.Events
