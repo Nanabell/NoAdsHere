@@ -52,9 +52,15 @@ namespace NoAdsHere.Services.AntiAds
             _client.GuildAvailable += GuildLoader;
             
             _client.MessageReceived += AdsHandler;
+            _client.MessageUpdated += MessageUpdateAntiAds;
             Logger.Info("AntiAds service started.");
         }
-        
+
+        private static async Task MessageUpdateAntiAds(Cacheable<IMessage, ulong> cacheable, SocketMessage socketMessage, ISocketMessageChannel channel)
+        {
+            await AdsHandler(socketMessage).ConfigureAwait(false);
+        }
+
         private static Task PopulateDictionary()
         {
             foreach (BlockType type in Enum.GetValues(typeof(BlockType)))
