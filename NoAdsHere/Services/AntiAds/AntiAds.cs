@@ -56,7 +56,7 @@ namespace NoAdsHere.Services.AntiAds
             Logger.Info("AntiAds service started.");
         }
 
-        private static async Task MessageUpdateAntiAds(Cacheable<IMessage, ulong> cacheable, SocketMessage socketMessage, ISocketMessageChannel channel)
+        private static async Task MessageUpdateAntiAds(Cacheable<IMessage, ulong> _, SocketMessage socketMessage, ISocketMessageChannel channel)
         {
             await AdsHandler(socketMessage).ConfigureAwait(false);
         }
@@ -70,7 +70,7 @@ namespace NoAdsHere.Services.AntiAds
 
         private static async Task GuildLoader(SocketGuild socketGuild)
         {
-            if (ActiveGuilds.Keys.Any(blocktype => !ActiveGuilds[blocktype].Contains(socketGuild.Id)))
+            if (ActiveGuilds.Keys.All(blocktype => !ActiveGuilds[blocktype].Contains(socketGuild.Id)))
             {
                 var blocks = await _mongo.GetCollection<Block>(_client.GetShardFor(socketGuild)).GetGuildBlocksAsync(socketGuild.Id);
                 foreach (var block in blocks.OrderBy(block => block.GuildId))
