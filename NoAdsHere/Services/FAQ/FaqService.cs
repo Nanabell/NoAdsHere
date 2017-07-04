@@ -64,7 +64,7 @@ namespace NoAdsHere.Services.FAQ
         
         [Command("q")]
         [RequirePermission(AccessLevel.User)]
-        public async Task Faq(string name = null)
+        public async Task Faq([Remainder]string name = null)
         {
             if (name == null)
             {

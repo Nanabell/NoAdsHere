@@ -5,6 +5,6 @@ namespace NoAdsHere.Common
         User,
         Role,
         Channel,
-        All
+        All = 100
     }
 }
