@@ -22,7 +22,7 @@ namespace NoAdsHere.Services.Penalties
                 if (emote == null) emote = Emote.Parse("<:NoAds:330796107540201472>");
                 if (self.GuildPermissions.UseExternalEmojis && emote != null)
                     msg = await context.Channel.SendMessageAsync(
-                        $"<:{emote}:{emote.Id}> {context.User.Mention} {message}! Trigger: {trigger} <:{emote}:{emote.Id}>");
+                        $"{emote} {context.User.Mention} {message}! Trigger: {trigger} {emote}");
                 else
                     msg = await context.Channel.SendMessageAsync(
                         $":no_entry_sign: {context.User.Mention} {message}! Trigger: {trigger} :no_entry_sign:");
@@ -37,7 +37,7 @@ namespace NoAdsHere.Services.Penalties
                 }
             }
         }
-        
+
         public static async Task SendWithEmojiAsync(ICommandContext context, string message, string trigger, Emoji emoji = null, bool autoDelete = false)
         {
             var self = await context.Guild.GetCurrentUserAsync();
@@ -45,8 +45,8 @@ namespace NoAdsHere.Services.Penalties
             if (context.Channel.CheckChannelPermission(ChannelPermission.SendMessages, self))
             {
                 if (emoji == null) emoji = new Emoji(":warning:");
-                    msg = await context.Channel.SendMessageAsync(
-                        $"{emoji.Name} {context.User.Mention} {message}! Trigger: {trigger} {emoji.Name}");
+                msg = await context.Channel.SendMessageAsync(
+                    $"{emoji.Name} {context.User.Mention} {message}! Trigger: {trigger} {emoji.Name}");
             }
             else Logger.Warn($"Unable to send nothing penalty message in {context.Guild}/{context.Channel} missing permissions!");
 

@@ -22,7 +22,7 @@ namespace NoAdsHere.Services.Penalties
                     IUserMessage msg;
                     if (emote == null) emote = Emote.Parse("<:Ban:330793436309487626>");
                     if (self.GuildPermissions.UseExternalEmojis && emote != null)
-                        msg = await context.Channel.SendMessageAsync($"<:{emote.Name}:{emote.Id}> {context.User.Mention} {message}! Trigger: {trigger} <:{emote.Name}:{emote.Id}>");
+                        msg = await context.Channel.SendMessageAsync($"{emote} {context.User.Mention} {message}! Trigger: {trigger} {emote}");
                     else
                         msg = await context.Channel.SendMessageAsync($":no_entry: {context.User.Mention} {message}! Trigger: {trigger} :no_entry:");
                     Logger.Info($"{context.User} has been banned from {context.Guild}");

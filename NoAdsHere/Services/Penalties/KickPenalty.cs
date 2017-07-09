@@ -22,7 +22,7 @@ namespace NoAdsHere.Services.Penalties
                     IUserMessage msg;
                     if (emote == null) emote = Emote.Parse("<:Kick:330793607919566852>");
                     if (self.GuildPermissions.UseExternalEmojis && emote != null)
-                        msg = await context.Channel.SendMessageAsync($"<:{emote}:{emote.Id}> {context.User.Mention} {message}! Trigger: {trigger} <:{emote}:{emote.Id}>");
+                        msg = await context.Channel.SendMessageAsync($"{emote} {context.User.Mention} {message}! Trigger: {trigger} {emote}");
                     else
                         msg = await context.Channel.SendMessageAsync($":boot: {context.User.Mention} {message}! Trigger: {trigger} :boot:");
                     Logger.Info($"{context.User} has been kicked from {context.Guild}.");
