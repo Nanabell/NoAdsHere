@@ -50,7 +50,7 @@ namespace NoAdsHere
         {
             Logger.Info("Unloading Message Handler");
             _client.MessageReceived -= ProccessCommandAsync;
-            
+
             Logger.Info("Stopped CommandHandler");
             return Task.CompletedTask;
         }
@@ -94,12 +94,15 @@ namespace NoAdsHere
 
                 case PreconditionResult preconditionResult:
                     response = $":warning: A precondition of your command failed: `{preconditionResult.ErrorReason}`";
-                    
+
                     break;
 
                 case ExecuteResult executeResult:
-                    response = $":warning: Your command failed to execute. If this persists, contact the bot developer.\n`{executeResult.Exception.Message}`";
-                    Logger.Error(executeResult.Exception);
+                    if (!executeResult.IsSuccess)
+                    {
+                        response = $":warning: Your command failed to execute. If this persists, contact the bot developer.\n`{executeResult.Exception.Message}`";
+                        Logger.Error(executeResult.Exception);
+                    }
                     break;
 
                 default:
@@ -115,7 +118,7 @@ namespace NoAdsHere
 
         private static bool ParseTriggers(IUserMessage message, ref int argPos)
             => message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasStringPrefix(_config.Prefix, ref argPos);
-        
+
         private static string FormatParam(ParameterInfo parameter)
         {
             var sb = new StringBuilder();

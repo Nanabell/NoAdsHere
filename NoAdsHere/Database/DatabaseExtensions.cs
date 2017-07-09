@@ -184,5 +184,13 @@ namespace NoAdsHere.Database
             var cursor = await collection.FindAsync(f => f.Name == name.ToLower());
             return await cursor.SingleOrDefaultAsync();
         }
+        
+        public static async Task<List<AllowString>> GetIgnoresAsync(this IMongoCollection<AllowString> collection, ulong guildId)
+        {
+            var cursor = await collection.FindAsync(f => f.GuildId == guildId);
+            var result = await cursor.ToListAsync();
+
+            return result ?? new List<AllowString>(0);
+        }
     }
 }

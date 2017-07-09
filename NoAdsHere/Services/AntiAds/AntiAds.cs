@@ -22,17 +22,21 @@ namespace NoAdsHere.Services.AntiAds
         private static DiscordShardedClient _client;
         private static MongoClient _mongo;
         private static readonly Dictionary<BlockType, List<ulong>> ActiveGuilds = new Dictionary<BlockType, List<ulong>>(0);
-        
+
         private static readonly Regex InstantInvite =
             new Regex(
                 @"(?:(?i)discord(?:(?:\.|.?dot.?)(?i)gg|app(?:\.|.?dot.?)com\/invite)\/(?<id>([\w]{10,16}|[a-zA-Z1-9]{4,8})))",
                 RegexOptions.Compiled);
+
         private static readonly Regex TwitchStream = new Regex(@"(?i)twitch\.(?i)tv\/(#)?([a-zA-Z0-9][\w]{2,24})",
             RegexOptions.Compiled);
+
         private static readonly Regex TwitchVideo = new Regex(@"(?i)twitch\.(?i)tv\/(?i)videos\/(#)?([0-9]{2,24})",
             RegexOptions.Compiled);
+
         private static readonly Regex TwitchClip = new Regex(@"(?i)clips\.(?i)twitch\.(?i)tv\/(#)?([a-zA-Z0-9][\w]{4,50})",
             RegexOptions.Compiled);
+
         private static readonly Regex YoutubeLink =
             new Regex(@"(?i)youtu(?:\.(?i)be|be\.com)\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)",
                 RegexOptions.Compiled);
@@ -50,7 +54,7 @@ namespace NoAdsHere.Services.AntiAds
             await PopulateDictionary().ConfigureAwait(false);
             Logger.Info("Hooking GuildAvailable event to Populate Active Guilds Dictionary");
             _client.GuildAvailable += GuildLoader;
-            
+
             _client.MessageReceived += AdsHandler;
             _client.MessageUpdated += MessageUpdateAntiAds;
             Logger.Info("AntiAds service started.");
@@ -100,7 +104,7 @@ namespace NoAdsHere.Services.AntiAds
             var message = socketMessage as SocketUserMessage;
             if (message == null) return;
             if (message.Author.IsBot) return;
-            
+
             var context = new CommandContext(_client, message);
             if (context.IsPrivate) return;
 
@@ -174,7 +178,7 @@ namespace NoAdsHere.Services.AntiAds
             Logger.Info($"Disabling AntiAds type {type} for guild {_client.GetGuild(guildId)}.");
             return true;
         }
-        
+
         private static async Task UpdateBlockEntry(BlockType type, ulong guildId, bool isEnabled)
         {
             var collection = _mongo.GetCollection<Block>(_client);
@@ -193,16 +197,16 @@ namespace NoAdsHere.Services.AntiAds
             var guildUser = context.User as IGuildUser;
             var ignores = await _mongo.GetCollection<Ignore>(_client).GetIgnoresAsync(context.Guild.Id, blockType);
             var masters = await _mongo.GetCollection<Master>(_client).GetMastersAsync();
+            var aStrings = await _mongo.GetCollection<AllowString>(_client).GetIgnoresAsync(context.Guild.Id);
 
             if (masters.Any(m => m.UserId == context.User.Id)) return false;
-            
+
             if (ignores.GetIgnoreType(IgnoreType.Channel).Any(c => c.IgnoredId == context.Channel.Id)) return false;
             if (ignores.GetIgnoreType(IgnoreType.User).Any(u => u.IgnoredId == context.User.Id)) return false;
-            
-            
-            // ReSharper disable once PossibleNullReferenceException
-            return !guildUser.RoleIds.Any(roleId => ignores.GetIgnoreType(IgnoreType.Role)
-                .Any(r => r.IgnoredId == roleId));
+            if (guildUser != null && guildUser.RoleIds.Any(roleId =>
+                    ignores.GetIgnoreType(IgnoreType.Role).Any(r => r.IgnoredId == roleId))
+            ) return false;
+            return !aStrings.CheckAllowedStrings(context);
         }
 
         private static async Task TryDelete(ICommandContext context, BlockType blockType)

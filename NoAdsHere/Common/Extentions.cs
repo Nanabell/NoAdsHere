@@ -41,5 +41,42 @@ namespace NoAdsHere.Common
             }
             return ret;
         }
+
+        public static bool CheckAllowedStrings(this IEnumerable<AllowString> allowStrings, ICommandContext context)
+        {
+            var guildUser = context.User as IGuildUser;
+            foreach (var allowString in allowStrings)
+            {
+                switch (allowString.IgnoreType)
+                {
+                    case IgnoreType.User:
+                        if (context.User.Id == allowString.IgnoredId)
+                            return context.Message.Content.CompareAllowedNoCase(allowString);
+                        break;
+                    case IgnoreType.Role:
+                        if (guildUser != null && guildUser.RoleIds.Any(roleId => roleId == allowString.IgnoredId))
+                            return context.Message.Content.CompareAllowedNoCase(allowString);
+                        break;
+                    case IgnoreType.Channel:
+                        if (context.Channel.Id == allowString.IgnoredId)
+                            return context.Message.Content.CompareAllowedNoCase(allowString);
+                        break;
+                    case IgnoreType.All:
+                        if (context.User.Id == allowString.IgnoredId)
+                            return context.Message.Content.CompareAllowedNoCase(allowString);
+                        if (context.Channel.Id == allowString.IgnoredId)
+                            return context.Message.Content.CompareAllowedNoCase(allowString);
+                        if (guildUser != null && guildUser.RoleIds.Any(roleId => roleId == allowString.IgnoredId))
+                            return context.Message.Content.CompareAllowedNoCase(allowString);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+            return false;
+        }
+
+        public static bool CompareAllowedNoCase(this string str, AllowString allowString)
+            => str.Equals(allowString.AllowedString, StringComparison.OrdinalIgnoreCase);
     }
 }

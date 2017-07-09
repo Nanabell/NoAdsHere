@@ -10,12 +10,11 @@ using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Services.Configuration;
-using Quartz.Impl.AdoJobStore.Common;
 
 namespace NoAdsHere.Commands.Ignores
 {
     [Name("Ignores"), Alias("Ignore"), Group("Ignores")]
-    public class IgnoreModule : ModuleBase
+    public class IgnoreModule : ModuleBase<SocketCommandContext>
     {
         private readonly MongoClient _mongo;
         private readonly Config _config;
@@ -28,15 +27,15 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Add")]
         [RequirePermission(AccessLevel.HighModerator)]
-        [Priority(-1)]
+        [Priority(-2)]
         public async Task AddHelp([Remainder] string test = null)
         {
             await ReplyAsync($"Correct Usage is: `{_config.Prefix.First()}Ignore Add <Type> <Target>`");
         }
-        
+
         [Command("Remove")]
         [RequirePermission(AccessLevel.HighModerator)]
-        [Priority(-1)]
+        [Priority(-2)]
         public async Task RemoveHelp([Remainder] string test = null)
         {
             await ReplyAsync($"Correct Usage is: `{_config.Prefix.First()}Ignore Remove <Type> <Target>`");
@@ -62,6 +61,66 @@ namespace NoAdsHere.Commands.Ignores
             else
             {
                 await ReplyAsync(":exclamation: User is already whitelisted! :exclamation:");
+            }
+        }
+
+        [Command("Add")]
+        [RequirePermission(AccessLevel.HighModerator)]
+        public async Task Add(IgnoreType ignoreType, ulong ignoreId, [Remainder] string allowedString)
+        {
+            var collection = _mongo.GetCollection<AllowString>(Context.Client);
+            var allows = await collection.GetIgnoresAsync(Context.Guild.Id);
+
+            if (!allows.Any(a =>
+                a.GuildId == Context.Guild.Id && a.IgnoreType == ignoreType && a.IgnoredId == ignoreId &&
+                a.AllowedString.Equals(allowedString, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (await ValidateUlong(Context, ignoreType, ignoreId))
+                {
+                    var newEntry = new AllowString(Context.Guild.Id, ignoreType, ignoreId, allowedString);
+                    await collection.InsertOneAsync(newEntry);
+                    await ReplyAsync(
+                        $":white_check_mark: String `{allowedString}` will now be whitelisted for `{ignoreType} {ignoreId}`");
+                }
+                else
+                {
+                    await ReplyAsync($"Input {ignoreId} is not a valid {ignoreType}");
+                }
+            }
+            else
+            {
+                await ReplyAsync("A matching entry is already existent");
+            }
+        }
+
+        [Command("Remove")]
+        [RequirePermission(AccessLevel.HighModerator)]
+        public async Task Remove(IgnoreType ignoreType, ulong ignoreId, [Remainder] string allowedString)
+        {
+            var collection = _mongo.GetCollection<AllowString>(Context.Client);
+            var allows = await collection.GetIgnoresAsync(Context.Guild.Id);
+
+            if (!allows.Any(a =>
+                a.GuildId == Context.Guild.Id && a.IgnoreType == ignoreType && a.IgnoredId == ignoreId &&
+                a.AllowedString.Equals(allowedString, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (await ValidateUlong(Context, ignoreType, ignoreId))
+                {
+                    var allow = allows.First(a =>
+                        a.GuildId == Context.Guild.Id && a.IgnoreType == ignoreType && a.IgnoredId == ignoreId &&
+                        a.AllowedString.Equals(allowedString, StringComparison.OrdinalIgnoreCase));
+                    await collection.DeleteAsync(allow);
+                    await ReplyAsync(
+                        $":white_check_mark: String `{allowedString}` will no longer be whitelisted for `{ignoreType} {ignoreId}`");
+                }
+                else
+                {
+                    await ReplyAsync($"Input {ignoreId} is not a valid {ignoreType}");
+                }
+            }
+            else
+            {
+                await ReplyAsync("A matching entry is not existent");
             }
         }
 
@@ -177,6 +236,33 @@ namespace NoAdsHere.Commands.Ignores
             else
             {
                 await ReplyAsync(":exclamation: Channel is not already whitelisted :exclamation:");
+            }
+        }
+
+        private async Task<bool> ValidateUlong(ICommandContext context, IgnoreType ignoreType, ulong ignoreId)
+        {
+            switch (ignoreType)
+            {
+                case IgnoreType.User:
+                    var user = await context.Guild.GetUserAsync(ignoreId);
+                    return user != null;
+
+                case IgnoreType.Channel:
+                    var channel = await context.Guild.GetChannelAsync(ignoreId);
+                    return channel != null;
+
+                case IgnoreType.Role:
+                    var role = context.Guild.GetRole(ignoreId);
+                    return role != null;
+
+                case IgnoreType.All:
+                    var auser = await context.Guild.GetUserAsync(ignoreId);
+                    var achannel = await context.Guild.GetChannelAsync(ignoreId);
+                    var arole = context.Guild.GetRole(ignoreId);
+                    return auser != null || achannel != null || arole != null;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(ignoreType), ignoreType, null);
             }
         }
 
