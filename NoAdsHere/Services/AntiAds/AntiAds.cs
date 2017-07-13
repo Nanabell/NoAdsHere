@@ -23,15 +23,15 @@ namespace NoAdsHere.Services.AntiAds
         private static MongoClient _mongo;
         private static readonly Dictionary<BlockType, List<ulong>> ActiveGuilds = new Dictionary<BlockType, List<ulong>>(0);
 
-        private static readonly Regex InstantInvite = new Regex(@"(?:(?i)discord(?:(?:\.|.?dot.?)(?i)gg|app(?:\.|.?dot.?)com\/invite)\/(?<id>([\w]{10,16}|[a-zA-Z1-9]{4,8})))", RegexOptions.Compiled);
+        private static readonly Regex InstantInvite = new Regex(@"(?:discord(?:(?:\.|.?dot.?)gg|app(?:\.|.?dot.?)com\/invite)\/(?<id>([\w]{10,16}|[a-zA-Z1-9]{4,8})))", RegexOptions.Compiled & RegexOptions.IgnoreCase);
 
-        private static readonly Regex TwitchStream = new Regex(@"(?i)twitch\.(?i)tv\/(#)?([a-zA-Z0-9][\w]{2,24})", RegexOptions.Compiled);
+        private static readonly Regex TwitchStream = new Regex(@"twitch\.tv\/(#)?([a-zA-Z0-9][\w]{2,24})", RegexOptions.Compiled & RegexOptions.IgnoreCase);
 
-        private static readonly Regex TwitchVideo = new Regex(@"(?i)twitch\.(?i)tv\/(?i)videos\/(#)?([0-9]{2,24})", RegexOptions.Compiled);
+        private static readonly Regex TwitchVideo = new Regex(@"twitch\.tv\/videos\/(#)?([0-9]{2,24})", RegexOptions.Compiled & RegexOptions.IgnoreCase);
 
-        private static readonly Regex TwitchClip = new Regex(@"(?i)clips\.(?i)twitch\.(?i)tv\/(#)?([a-zA-Z0-9][\w]{4,50})", RegexOptions.Compiled);
+        private static readonly Regex TwitchClip = new Regex(@"clips\.twitch\.tv\/(#)?([a-zA-Z0-9][\w]{4,50})", RegexOptions.Compiled & RegexOptions.IgnoreCase);
 
-        private static readonly Regex YoutubeLink = new Regex(@"(?i)youtu(?:\.(?i)be|be\.com)\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)", RegexOptions.Compiled);
+        private static readonly Regex YoutubeLink = new Regex(@"youtu(?:\.be|be\.com)\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)", RegexOptions.Compiled & RegexOptions.IgnoreCase);
 
         public static Task Install(IServiceProvider provider)
         {
