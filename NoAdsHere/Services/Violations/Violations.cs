@@ -162,8 +162,8 @@ namespace NoAdsHere.Services.Violations
                 case BlockType.YoutubeLink:
                     return "Message contained a YouTube Link.";
 
-                case BlockType.All:
-                    return "[Error] This Message should never appear!";
+                case BlockType.SteamScam:
+                    return "Message contained a Steam Advertisement Link!";
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(blockType), blockType, null);

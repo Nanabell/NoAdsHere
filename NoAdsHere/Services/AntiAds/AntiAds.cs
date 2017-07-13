@@ -34,6 +34,8 @@ namespace NoAdsHere.Services.AntiAds
 
         private static readonly Regex YoutubeLink = new Regex(@"youtu(?:\.be|be\.com)\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)", RegexOptions.Compiled & RegexOptions.IgnoreCase);
 
+        private static readonly Regex SteamScam = new Regex(@"steam(?:reward|special|summer)\.com/?\?id=\w+", RegexOptions.Compiled & RegexOptions.IgnoreCase);
+
         public static Task Install(IServiceProvider provider)
         {
             _database = provider.GetRequiredService<DatabaseService>();
@@ -148,6 +150,17 @@ namespace NoAdsHere.Services.AntiAds
                             await TryDelete(context, BlockType.YoutubeLink).ConfigureAwait(false);
                             await Violations.Violations.Add(context, BlockType.YoutubeLink);
                         }
+                }
+                if (ActiveGuilds[BlockType.SteamScam].Contains(context.Guild.Id))
+                {
+                    if (SteamScam.IsMatch(rawmsg))
+                    {
+                        if (await IsToDelete(context, BlockType.SteamScam).ConfigureAwait(false))
+                        {
+                            await TryDelete(context, BlockType.SteamScam).ConfigureAwait(false);
+                            await Violations.Violations.Add(context, BlockType.SteamScam);
+                        }
+                    }
                 }
             });
             await Task.CompletedTask.ConfigureAwait(false);
