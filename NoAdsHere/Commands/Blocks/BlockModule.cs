@@ -31,39 +31,14 @@ namespace NoAdsHere.Commands.Blocks
             var success = new List<bool>(0);
             var blocktype = ParseBlockType(type);
 
-            switch (blocktype)
+            if (blocktype == BlockType.All)
             {
-                case BlockType.InstantInvite:
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.InstantInvite, Context.Guild.Id));
-                    break;
-
-                case BlockType.YoutubeLink:
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.YoutubeLink, Context.Guild.Id));
-                    break;
-
-                case BlockType.TwitchStream:
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchStream, Context.Guild.Id));
-                    break;
-
-                case BlockType.TwitchVideo:
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchVideo, Context.Guild.Id));
-                    break;
-
-                case BlockType.TwitchClip:
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchClip, Context.Guild.Id));
-                    break;
-
-                case BlockType.All:
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.InstantInvite, Context.Guild.Id));
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.YoutubeLink, Context.Guild.Id));
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchStream, Context.Guild.Id));
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchVideo, Context.Guild.Id));
-                    success.Add(await AntiAds.TryEnableGuild(BlockType.TwitchClip, Context.Guild.Id));
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
+                foreach (BlockType block in Enum.GetValues(typeof(BlockType)))
+                {
+                    success.Add(await AntiAds.TryEnableGuild(block, Context.Guild.Id));
+                }
             }
+            success.Add(await AntiAds.TryEnableGuild(blocktype, Context.Guild.Id));
 
             if (success.All(f => f))
             {
@@ -85,39 +60,14 @@ namespace NoAdsHere.Commands.Blocks
             var success = new List<bool>(0);
             var blocktype = ParseBlockType(type);
 
-            switch (blocktype)
+            if (blocktype == BlockType.All)
             {
-                case BlockType.InstantInvite:
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.InstantInvite, Context.Guild.Id));
-                    break;
-
-                case BlockType.YoutubeLink:
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.YoutubeLink, Context.Guild.Id));
-                    break;
-
-                case BlockType.TwitchStream:
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchStream, Context.Guild.Id));
-                    break;
-
-                case BlockType.TwitchVideo:
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchVideo, Context.Guild.Id));
-                    break;
-
-                case BlockType.TwitchClip:
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchClip, Context.Guild.Id));
-                    break;
-
-                case BlockType.All:
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.InstantInvite, Context.Guild.Id));
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.YoutubeLink, Context.Guild.Id));
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchStream, Context.Guild.Id));
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchVideo, Context.Guild.Id));
-                    success.Add(await AntiAds.TryDisableGuild(BlockType.TwitchClip, Context.Guild.Id));
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
+                foreach (BlockType block in Enum.GetValues(typeof(BlockType)))
+                {
+                    success.Add(await AntiAds.TryDisableGuild(block, Context.Guild.Id));
+                }
             }
+            success.Add(await AntiAds.TryDisableGuild(blocktype, Context.Guild.Id));
 
             if (success.All(f => f))
             {
@@ -161,6 +111,9 @@ namespace NoAdsHere.Commands.Blocks
                 case "clip":
                 case "tclip":
                     return BlockType.TwitchClip;
+
+                case "steam":
+                    return BlockType.SteamScam;
 
                 default:
                     return BlockType.All;
