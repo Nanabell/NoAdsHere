@@ -14,13 +14,14 @@ using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.FAQ;
 using NoAdsHere.Services.LogService;
 using NoAdsHere.Services.Penalties;
+using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Services.Events
 {
     public static class EventHandlers
     {
         private static DiscordShardedClient _client;
-        private static MongoClient _mongo;
+        private static DatabaseService _database;
         private static Config _config;
         private static LogChannelService _logger;
         private static readonly Logger Logger = LogManager.GetLogger("EventHandler");
@@ -40,7 +41,7 @@ namespace NoAdsHere.Services.Events
                 }
                 shard.Ready += Handler;
             }
-            
+
             _client.Log += ClientLogger;
             return Task.CompletedTask;
         }
@@ -49,26 +50,26 @@ namespace NoAdsHere.Services.Events
         {
             _logger = provider.GetService<LogChannelService>();
             _config = provider.GetService<Config>();
-            _mongo = provider.GetService<MongoClient>();
+            _database = provider.GetService<DatabaseService>();
 
             Logger.Info("Installing CommandHandler");
             await CommandHandler.Install(provider);
             await CommandHandler.ConfigureAsync();
-            
+
             Logger.Info("Installing FAQ Service");
             await FaqService.Install(provider);
             await FaqService.LoadFaqs();
-            
+
             Logger.Info("Installing AntiAds Service");
             await AntiAds.AntiAds.Install(provider);
             await AntiAds.AntiAds.StartAsync();
-            
+
             Logger.Info("Installing Violations Service");
             await Violations.Violations.Install(provider);
-            
+
             Logger.Info("Loading JobQueue");
             await JobQueue.Install(provider);
-            
+
             _client.JoinedGuild += JoinedGuild;
             _client.LeftGuild += LeftGuild;
         }
@@ -93,7 +94,7 @@ namespace NoAdsHere.Services.Events
                 logger.Warn(message.Exception, message.Message);
             return Task.CompletedTask;
         }
-        
+
         private static LogLevel LogLevelParser(LogSeverity severity)
         {
             switch (severity)
@@ -120,7 +121,7 @@ namespace NoAdsHere.Services.Events
                     return LogLevel.Off;
             }
         }
-        
+
         public static Task CommandLogger(LogMessage message)
         {
             var logger = LogManager.GetLogger("Command");
@@ -136,10 +137,8 @@ namespace NoAdsHere.Services.Events
         {
             await JoinLog(guild).ConfigureAwait(false);
             var logger = LogManager.GetLogger("AntiAds");
-            var collection = _mongo.GetCollection<Penalty>(_client);
-            var penalties = await collection.GetPenaltiesAsync(guild.Id);
-            var blocks = await _mongo.GetCollection<Block>(_client).GetGuildBlocksAsync(guild.Id);
-            
+            var penalties = await _database.GetPenaltiesAsync(guild.Id);
+            var blocks = await _database.GetBlocksAsync(guild.Id);
 
             if (!penalties.Any())
             {
@@ -150,9 +149,9 @@ namespace NoAdsHere.Services.Events
                     new Penalty(guild.Id, 3, PenaltyType.Kick, 5),
                     new Penalty(guild.Id, 4, PenaltyType.Ban, 6)
                 };
-                
+
                 logger.Info("Adding default penalties.");
-                await collection.InsertManyAsync(newPenalties);
+                await _database.InsertManyAsync(newPenalties);
             }
             else
             {
@@ -173,25 +172,25 @@ namespace NoAdsHere.Services.Events
                 {
                     logger.Warn(e, $"Failed to send Joinmessage in {guild}/{guild.DefaultChannel}");
                 }
-
             }
             else
             {
                 Logger.Info($"Joined Guild {guild} but {blocks.Count} Blocks were already present, No joinMessage");
-
             }
         }
+
         private static async Task JoinLog(SocketGuild guild)
         {
             var shard = _client.GetShardFor(guild);
             await _logger.LogMessageAsync(_client, shard, Emote.Parse("<:Yes:330454342282903563>"),
                 $"Joined guild `{guild}({guild.Id})`. Users: `{guild.Users.Count}`.");
         }
-        
+
         private static async Task LeftGuild(SocketGuild socketGuild)
         {
             await LeaveLog(socketGuild).ConfigureAwait(false);
         }
+
         private static async Task LeaveLog(SocketGuild guild)
         {
             var shard = _client.GetShardFor(guild);

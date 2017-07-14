@@ -15,6 +15,9 @@ using NoAdsHere.Services.FAQ;
 using NoAdsHere.Services.LogService;
 using Quartz;
 using Quartz.Impl;
+using MongoDB.Bson.Serialization.Conventions;
+using MongoDB.Bson;
+using NoAdsHere.Services.Database;
 
 namespace NoAdsHere
 {
@@ -26,13 +29,14 @@ namespace NoAdsHere
         private DiscordShardedClient _client;
         private Config _config;
         private MongoClient _mongo;
+        private DatabaseService _database;
         private readonly Logger _logger = LogManager.GetLogger("Core");
         private IScheduler _scheduler;
 
         public async Task RunAsync()
         {
             _config = Config.Load();
-            
+
             _logger.Info($"Creating Discord Sharded Client with {_config.TotalShards} Shards");
             _client = new DiscordShardedClient(new DiscordSocketConfig
             {
@@ -48,11 +52,15 @@ namespace NoAdsHere
 
             await EventHandlers.StartHandlers(_client);
 
-            
+            _logger.Info("Creating MongoClient");
             _mongo = CreateDatabaseConnection();
+            _logger.Info("Adding Enum String Convention to ConventionRegistry");
+            LoadConventionPack();
+
+            _logger.Info("Starting DatabaseService");
+            _database = ConfigureDatabaseService();
+
             _scheduler = await StartQuartz().ConfigureAwait(false);
-            DatabaseBase.Mongo = _mongo;
-            DatabaseBase.Client = _client;
 
             var provider = ConfigureServices();
             await EventHandlers.StartServiceHandlers(provider);
@@ -62,7 +70,6 @@ namespace NoAdsHere
 
             await Task.Delay(-1);
         }
-
 
         private static async Task<IScheduler> StartQuartz()
         {
@@ -78,6 +85,19 @@ namespace NoAdsHere
             return new MongoClient(_config.Database.ConnectionString);
         }
 
+        private void LoadConventionPack()
+        {
+            var pack = new ConventionPack
+            {
+                new EnumRepresentationConvention(BsonType.String)
+            };
+
+            ConventionRegistry.Register("EnumStringConvention", pack, t => true);
+        }
+
+        private DatabaseService ConfigureDatabaseService()
+            => new DatabaseService(_mongo, "NoAdsHere");
+
         private IServiceProvider ConfigureServices()
         {
             _logger.Info("Configuring dependency injection and services...");
@@ -85,11 +105,12 @@ namespace NoAdsHere
                 .AddSingleton(_client)
                 .AddSingleton(_config)
                 .AddSingleton(_mongo)
+                .AddSingleton(_database)
                 .AddSingleton(new LogChannelService(_config))
                 .AddSingleton(_scheduler)
                 .AddSingleton(new FaqSystem(_client, _mongo, _config))
                 .AddSingleton(new InteractiveService(_client.Shards.First()))
-                .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false, LogLevel = LogSeverity.Verbose, DefaultRunMode = RunMode.Sync}));
+                .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false, LogLevel = LogSeverity.Verbose, DefaultRunMode = RunMode.Sync }));
 
             var provider = servies.BuildServiceProvider();
             return provider;

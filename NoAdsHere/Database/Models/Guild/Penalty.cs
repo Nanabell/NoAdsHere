@@ -1,9 +1,12 @@
 using MongoDB.Bson;
+using MongoDB.Driver;
 using NoAdsHere.Common;
+using NoAdsHere.Services.Database;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Database.Models.GuildSettings
 {
-    public class Penalty : IIndexed
+    public class Penalty : DatabaseService, IIndexed
     {
         public Penalty(ulong guildId, int penaltyId, PenaltyType penaltyType, int requiredPoints,
             string message = null, bool autoDelete = false)
@@ -23,5 +26,17 @@ namespace NoAdsHere.Database.Models.GuildSettings
         public int RequiredPoints { get; set; }
         public string Message { get; set; }
         public bool AutoDelete { get; set; }
+
+        internal async Task<DeleteResult> DeleteAsync()
+        {
+            var collection = _db.GetCollection<Penalty>();
+            return await collection.DeleteOneAsync(i => i.Id == Id);
+        }
+
+        internal async Task<ReplaceOneResult> UpdateAsync()
+        {
+            var collection = _db.GetCollection<Penalty>();
+            return await collection.ReplaceOneAsync(i => i.Id == Id, this, new UpdateOptions { IsUpsert = true });
+        }
     }
 }

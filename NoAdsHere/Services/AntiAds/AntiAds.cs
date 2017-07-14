@@ -13,6 +13,7 @@ using NoAdsHere.Common;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.Global;
 using NoAdsHere.Database.Models.GuildSettings;
+using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Services.AntiAds
 {
@@ -20,7 +21,7 @@ namespace NoAdsHere.Services.AntiAds
     {
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
         private static DiscordShardedClient _client;
-        private static MongoClient _mongo;
+        private static DatabaseService _database;
         private static readonly Dictionary<BlockType, List<ulong>> ActiveGuilds = new Dictionary<BlockType, List<ulong>>(0);
 
         private static readonly Regex InstantInvite = new Regex(@"(?:(?i)discord(?:(?:\.|.?dot.?)(?i)gg|app(?:\.|.?dot.?)com\/invite)\/(?<id>([\w]{10,16}|[a-zA-Z1-9]{4,8})))", RegexOptions.Compiled);
@@ -35,21 +36,22 @@ namespace NoAdsHere.Services.AntiAds
 
         public static Task Install(IServiceProvider provider)
         {
+            _database = provider.GetRequiredService<DatabaseService>();
             _client = provider.GetService<DiscordShardedClient>();
-            _mongo = provider.GetService<MongoClient>();
             return Task.CompletedTask;
         }
 
-        public static async Task StartAsync()
+        public static Task StartAsync()
         {
             Logger.Info("Loading Blocktypes into ActiveGuilds Dictionary");
-            await PopulateDictionary().ConfigureAwait(false);
+            PopulateDictionary();
             Logger.Info("Hooking GuildAvailable event to Populate Active Guilds Dictionary");
             _client.GuildAvailable += GuildLoader;
 
             _client.MessageReceived += AdsHandler;
             _client.MessageUpdated += MessageUpdateAntiAds;
             Logger.Info("AntiAds service started.");
+            return Task.CompletedTask;
         }
 
         private static async Task MessageUpdateAntiAds(Cacheable<IMessage, ulong> _, SocketMessage socketMessage, ISocketMessageChannel channel)
@@ -57,21 +59,19 @@ namespace NoAdsHere.Services.AntiAds
             await AdsHandler(socketMessage).ConfigureAwait(false);
         }
 
-        private static Task PopulateDictionary()
+        private static void PopulateDictionary()
         {
             foreach (BlockType type in Enum.GetValues(typeof(BlockType)))
                 ActiveGuilds.Add(type, new List<ulong>(0));
-            return Task.CompletedTask;
         }
 
         private static async Task GuildLoader(SocketGuild socketGuild)
         {
             if (ActiveGuilds.Keys.All(blocktype => !ActiveGuilds[blocktype].Contains(socketGuild.Id)))
             {
-                var blocks = await _mongo.GetCollection<Block>(_client.GetShardFor(socketGuild)).GetGuildBlocksAsync(socketGuild.Id);
+                var blocks = await _database.GetBlocksAsync(socketGuild.Id);
                 foreach (var block in blocks.OrderBy(block => block.GuildId))
                 {
-                    if (!block.IsEnabled) continue;
                     ActiveGuilds[block.BlockType].Add(block.GuildId);
                     Logger.Info($"Guild {socketGuild}({socketGuild.Id}) added active list {block.BlockType}.");
                 }
@@ -173,31 +173,27 @@ namespace NoAdsHere.Services.AntiAds
 
         private static async Task UpdateBlockEntry(BlockType type, ulong guildId, bool isEnabled)
         {
-            var collection = _mongo.GetCollection<Block>(_client);
-            var block = await collection.GetBlockAsync(guildId, type);
-
-            if (isEnabled != block.IsEnabled)
-            {
-                block.IsEnabled = isEnabled;
-                await collection.SaveAsync(block);
-                Logger.Info("Updated block collection!");
-            }
+            var block = await _database.GetBlockAsync(guildId, type);
+            await block.UpdateAsync();
         }
 
         private static async Task<bool> IsToDelete(ICommandContext context, BlockType blockType)
         {
-            var guildUser = context.User as IGuildUser;
-            var ignores = await _mongo.GetCollection<Ignore>(_client).GetIgnoresAsync(context.Guild.Id, blockType);
-            var masters = await _mongo.GetCollection<Master>(_client).GetMastersAsync();
-            var aStrings = await _mongo.GetCollection<AllowString>(_client).GetIgnoresAsync(context.Guild.Id);
-
+            var masters = await _database.GetMastersAsync();
             if (masters.Any(m => m.UserId == context.User.Id)) return false;
 
-            if (ignores.GetIgnoreType(IgnoreType.Channel).Any(c => c.IgnoredId == context.Channel.Id)) return false;
-            if (ignores.GetIgnoreType(IgnoreType.User).Any(u => u.IgnoredId == context.User.Id)) return false;
-            if (guildUser != null && guildUser.RoleIds.Any(roleId =>
-                    ignores.GetIgnoreType(IgnoreType.Role).Any(r => r.IgnoredId == roleId))
-            ) return false;
+            var guildUser = context.User as IGuildUser;
+
+            var channelIgnores = await _database.GetChannelIgnoresAsync(context.Guild.Id, blockType);
+            if (channelIgnores.Any(c => c.IgnoredId == context.Channel.Id)) return false;
+
+            var userIgnores = await _database.GetUserIgnoresAsync(context.Guild.Id, blockType);
+            if (userIgnores.Any(u => u.IgnoredId == context.User.Id)) return false;
+
+            var roleIgnores = await _database.GetRoleIgnoresAsync(context.Guild.Id, blockType);
+            if (guildUser != null && guildUser.RoleIds.Any(roleId => roleIgnores.Any(r => r.IgnoredId == roleId))) return false;
+
+            var aStrings = await _database.GetIgnoreStringsAsync(context.Guild.Id);
             return !aStrings.CheckAllowedStrings(context);
         }
 

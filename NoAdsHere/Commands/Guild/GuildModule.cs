@@ -11,7 +11,8 @@ using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
-using NoAdsHere.Database.Models.Violator;
+using NoAdsHere.Services.Database;
+using NoAdsHere.Database.Models.Guild;
 
 namespace NoAdsHere.Commands.Guild
 {
@@ -19,20 +20,20 @@ namespace NoAdsHere.Commands.Guild
     public class GuildModule : ModuleBase
     {
         private readonly InteractiveService _interactiveService;
-        private readonly MongoClient _mongo;
+        private readonly DatabaseService _database;
 
-        public GuildModule(InteractiveService interactiveService, MongoClient mongo)
+        public GuildModule(InteractiveService interactiveService, DatabaseService database)
         {
-            if (interactiveService != null) {_interactiveService = interactiveService;}
-            if (mongo != null) {_mongo = mongo;}
+            if (interactiveService != null) { _interactiveService = interactiveService; }
+            _database = database;
         }
 
         [Command("Statistics"), Alias("Stats")]
         [RequirePermission(AccessLevel.User)]
         public async Task Stats()
         {
-            var stats = await _mongo.GetCollection<Stats>(Context.Client).GetGuildStatsAsync(Context.Guild);
-            var allstats = await _mongo.GetCollection<Stats>(Context.Client).GetAllStatsAsync();
+            var stats = await _database.GetStatisticsAsync(Context.Guild.Id);
+            var allstats = await _database.GetStatisticsAsync();
             var embed = new EmbedBuilder
             {
                 Title = "NoAdsHere Statistics",
@@ -44,10 +45,10 @@ namespace NoAdsHere.Commands.Guild
             embed.Description += $"Total Kicks: {stats.Kicks}\n";
             embed.Description += $"Total Bans: {stats.Bans}\n\n";
             embed.Description += "**Global:**\n";
-            embed.Description += $"Total Blocks: {allstats.Sum(s => s.Blocks)}\n";
-            embed.Description += $"Total Warns: {allstats.Sum(s => s.Warns)}\n";
-            embed.Description += $"Total Kicks: {allstats.Sum(s => s.Kicks)}\n";
-            embed.Description += $"Total Bans: {allstats.Sum(s => s.Bans)}\n";
+            embed.Description += $"Total Blocks: {allstats.Blocks}\n";
+            embed.Description += $"Total Warns: {allstats.Warns}\n";
+            embed.Description += $"Total Kicks: {allstats.Kicks}\n";
+            embed.Description += $"Total Bans: {allstats.Bans}\n";
             embed.WithFooter(footer => footer.Text = $"Uptime: {GetUptime()}");
 
             await ReplyAsync("", embed: embed);
@@ -55,12 +56,12 @@ namespace NoAdsHere.Commands.Guild
 
         private static string GetUptime()
             => (DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss");
-        
+
         [Command("Reset Points", RunMode = RunMode.Async)]
         [RequirePermission(AccessLevel.Moderator)]
         public async Task Reset_Points()
         {
-            var violators = await _mongo.GetCollection<Violator>(Context.Client).GetAllByGuildAsync(Context.Guild.Id);
+            var violators = await _database.GetViolatorsAsync(Context.Guild.Id);
             await ReplyAsync(
                 $"Are you sure you want to reset all points for all Users in {Context.Guild} ? *({violators.Count} total)*\n**Yes** - confirm\n**No** - cancel\n**30 sec timeout**");
             var response = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30),
@@ -83,9 +84,8 @@ namespace NoAdsHere.Commands.Guild
         [RequirePermission(AccessLevel.Moderator)]
         public async Task Reset_User(IGuildUser user)
         {
-            var collection = _mongo.GetCollection<Violator>(Context.Client);
-            var violator = await collection.GetUserAsync(user.GuildId, user.Id);
-            await collection.DeleteAsync(violator);
+            var violator = await _database.GetViolatorAsync(user.GuildId, user.Id);
+            await violator.DeleteAsync();
             var logger = LogManager.GetLogger("Violations");
             logger.Info($"Removed {user}'s entry for {Context.Guild}");
             await ReplyAsync($"{user}'s *({violator.Points + (violator.Points > 1 ? " points" : " point")})* entry deleted.");
@@ -93,8 +93,7 @@ namespace NoAdsHere.Commands.Guild
 
         private async Task<DeleteResult> ClearPoints(ICommandContext context)
         {
-            var collection = _mongo.GetCollection<Violator>(context.Client);
-            return await collection.DeleteManyAsync(violator => violator.GuildId == context.Guild.Id);
+            return await _database.GetCollection<Violator>().DeleteManyAsync(violator => violator.GuildId == context.Guild.Id);
         }
     }
 }

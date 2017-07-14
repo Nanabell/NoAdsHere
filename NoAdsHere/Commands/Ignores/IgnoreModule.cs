@@ -10,19 +10,20 @@ using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Services.Configuration;
+using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Commands.Ignores
 {
     [Name("Ignores"), Alias("Ignore"), Group("Ignores")]
     public class IgnoreModule : ModuleBase<SocketCommandContext>
     {
-        private readonly MongoClient _mongo;
+        private readonly DatabaseService _database;
         private readonly Config _config;
 
-        public IgnoreModule(IServiceProvider provider, Config config)
+        public IgnoreModule(DatabaseService database, Config config)
         {
             _config = config;
-            _mongo = provider.GetService<MongoClient>();
+            _database = database;
         }
 
         [Command("Add")]
@@ -43,20 +44,17 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Add")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Add(string type, IGuildUser user)
+        public async Task Add(BlockType type, IGuildUser user)
         {
-            var collection = _mongo.GetCollection<Ignore>(Context.Client);
-            var blockType = ParseBlockType(type);
-            var ignores = await collection.GetIgnoresAsync(Context.Guild.Id, blockType);
-            var userIgnores = ignores.GetIgnoreType(IgnoreType.User);
+            var ignores = await _database.GetUserIgnoresAsync(Context.Guild.Id, type);
 
-            if (userIgnores.All(ignore => ignore.IgnoredId != user.Id))
+            if (ignores.All(ignore => ignore.IgnoredId != user.Id))
             {
-                var userIgnore = new Ignore(Context.Guild.Id, IgnoreType.User,
-                    user.Id, blockType);
-                await collection.InsertOneAsync(userIgnore);
+                var ignore = new Ignore(Context.Guild.Id, IgnoreType.User,
+                    user.Id, type);
+                await _database.InsertOneAsync(ignore);
                 await ReplyAsync(
-                    $":white_check_mark: User {user}`(ID: {user.Id})` will now be whitelisted for {blockType}. :white_check_mark:");
+                    $":white_check_mark: User {user}`(ID: {user.Id})` will now be whitelisted for {type}. :white_check_mark:");
             }
             else
             {
@@ -68,8 +66,7 @@ namespace NoAdsHere.Commands.Ignores
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task Add(IgnoreType ignoreType, ulong ignoreId, [Remainder] string allowedString)
         {
-            var collection = _mongo.GetCollection<AllowString>(Context.Client);
-            var allows = await collection.GetIgnoresAsync(Context.Guild.Id);
+            var allows = await _database.GetIgnoreStringsAsync(Context.Guild.Id);
 
             if (!allows.Any(a =>
                 a.GuildId == Context.Guild.Id && a.IgnoreType == ignoreType && a.IgnoredId == ignoreId &&
@@ -78,7 +75,7 @@ namespace NoAdsHere.Commands.Ignores
                 if (await ValidateUlong(Context, ignoreType, ignoreId))
                 {
                     var newEntry = new AllowString(Context.Guild.Id, ignoreType, ignoreId, allowedString);
-                    await collection.InsertOneAsync(newEntry);
+                    await _database.InsertOneAsync(newEntry);
                     await ReplyAsync(
                         $":white_check_mark: String `{allowedString}` will now be whitelisted for `{ignoreType} {ignoreId}`");
                 }
@@ -97,8 +94,7 @@ namespace NoAdsHere.Commands.Ignores
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task Remove(IgnoreType ignoreType, ulong ignoreId, [Remainder] string allowedString)
         {
-            var collection = _mongo.GetCollection<AllowString>(Context.Client);
-            var allows = await collection.GetIgnoresAsync(Context.Guild.Id);
+            var allows = await _database.GetIgnoreStringsAsync(Context.Guild.Id);
 
             if (!allows.Any(a =>
                 a.GuildId == Context.Guild.Id && a.IgnoreType == ignoreType && a.IgnoredId == ignoreId &&
@@ -109,7 +105,7 @@ namespace NoAdsHere.Commands.Ignores
                     var allow = allows.First(a =>
                         a.GuildId == Context.Guild.Id && a.IgnoreType == ignoreType && a.IgnoredId == ignoreId &&
                         a.AllowedString.Equals(allowedString, StringComparison.OrdinalIgnoreCase));
-                    await collection.DeleteAsync(allow);
+                    await allow.DeleteAsync();
                     await ReplyAsync(
                         $":white_check_mark: String `{allowedString}` will no longer be whitelisted for `{ignoreType} {ignoreId}`");
                 }
@@ -126,20 +122,18 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Add")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Add(string type, IRole role)
+        public async Task Add(BlockType type, IRole role)
         {
-            var collection = _mongo.GetCollection<Ignore>(Context.Client);
-            var blockType = ParseBlockType(type);
-            var ignores = await collection.GetIgnoresAsync(Context.Guild.Id, blockType);
+            var ignores = await _database.GetRoleIgnoresAsync(Context.Guild.Id, type);
             var roleIgnores = ignores.GetIgnoreType(IgnoreType.Role);
 
             if (roleIgnores.All(ignore => ignore.IgnoredId != role.Id))
             {
                 var roleIgnore = new Ignore(Context.Guild.Id, IgnoreType.Role,
-                    role.Id, blockType);
-                await collection.InsertOneAsync(roleIgnore);
+                    role.Id, type);
+                await _database.InsertOneAsync(roleIgnore);
                 await ReplyAsync(
-                    $":white_check_mark: Role {role}`(ID: {role.Id})` will now be whitelisted for {blockType} :white_check_mark:");
+                    $":white_check_mark: Role {role}`(ID: {role.Id})` will now be whitelisted for {type} :white_check_mark:");
             }
             else
             {
@@ -149,20 +143,18 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Add")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Add(string type, ITextChannel channel)
+        public async Task Add(BlockType type, ITextChannel channel)
         {
-            var collection = _mongo.GetCollection<Ignore>(Context.Client);
-            var blockType = ParseBlockType(type);
-            var ignores = await collection.GetIgnoresAsync(Context.Guild.Id, blockType);
+            var ignores = await _database.GetChannelIgnoresAsync(Context.Guild.Id, type);
             var channelIgnores = ignores.GetIgnoreType(IgnoreType.Channel);
 
             if (channelIgnores.All(ignore => ignore.IgnoredId != channel.Id))
             {
                 var channelIgnore = new Ignore(Context.Guild.Id, IgnoreType.Channel,
-                    channel.Id, blockType);
-                await collection.InsertOneAsync(channelIgnore);
+                    channel.Id, type);
+                await _database.InsertOneAsync(channelIgnore);
                 await ReplyAsync(
-                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will now be whitelisted for {blockType} :white_check_mark:");
+                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will now be whitelisted for {type} :white_check_mark:");
             }
             else
             {
@@ -172,20 +164,18 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Remove")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Remove(string type, IGuildUser user)
+        public async Task Remove(BlockType type, IGuildUser user)
         {
-            var collection = _mongo.GetCollection<Ignore>(Context.Client);
-            var blockType = ParseBlockType(type);
-            var ignores = await collection.GetIgnoresAsync(Context.Guild.Id, blockType);
+            var ignores = await _database.GetUserIgnoresAsync(Context.Guild.Id, type);
             var userIgnores = ignores.GetIgnoreType(IgnoreType.User);
 
             var first = userIgnores.FirstOrDefault(ignore => ignore.IgnoredId == user.Id);
 
             if (first != null)
             {
-                await collection.DeleteAsync(first);
+                await first.DeleteAsync();
                 await ReplyAsync(
-                    $":white_check_mark: User {user}`(ID: {user.Id})` will no longer be whitelisted for {blockType}. :white_check_mark:");
+                    $":white_check_mark: User {user}`(ID: {user.Id})` will no longer be whitelisted for {type}. :white_check_mark:");
             }
             else
             {
@@ -195,20 +185,18 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Remove")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Remove(string type, IRole role)
+        public async Task Remove(BlockType type, IRole role)
         {
-            var collection = _mongo.GetCollection<Ignore>(Context.Client);
-            var blockType = ParseBlockType(type);
-            var ignores = await collection.GetIgnoresAsync(Context.Guild.Id, blockType);
+            var ignores = await _database.GetRoleIgnoresAsync(Context.Guild.Id, type);
             var roleIgnores = ignores.GetIgnoreType(IgnoreType.Role);
 
             var first = roleIgnores.FirstOrDefault(ignore => ignore.IgnoredId == role.Id);
 
             if (first != null)
             {
-                await collection.DeleteAsync(first);
+                await first.DeleteAsync();
                 await ReplyAsync(
-                    $":white_check_mark: Role {role}`(ID: {role.Id})` will no longer be whitelisted for {blockType}. :white_check_mark:");
+                    $":white_check_mark: Role {role}`(ID: {role.Id})` will no longer be whitelisted for {type}. :white_check_mark:");
             }
             else
             {
@@ -218,20 +206,18 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Remove")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Remove(string type, ITextChannel channel)
+        public async Task Remove(BlockType type, ITextChannel channel)
         {
-            var collection = _mongo.GetCollection<Ignore>(Context.Client);
-            var blockType = ParseBlockType(type);
-            var ignores = await collection.GetIgnoresAsync(Context.Guild.Id, blockType);
+            var ignores = await _database.GetChannelIgnoresAsync(Context.Guild.Id, type);
             var channelIgnores = ignores.GetIgnoreType(IgnoreType.Channel);
 
             var first = channelIgnores.FirstOrDefault(ignore => ignore.IgnoredId == channel.Id);
 
             if (first != null)
             {
-                await collection.DeleteAsync(first);
+                await first.DeleteAsync();
                 await ReplyAsync(
-                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will no longer be whitelisted for {blockType} :white_check_mark:");
+                    $":white_check_mark: Channel {channel}`(ID: {channel.Id})` will no longer be whitelisted for {type} :white_check_mark:");
             }
             else
             {
@@ -263,40 +249,6 @@ namespace NoAdsHere.Commands.Ignores
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(ignoreType), ignoreType, null);
-            }
-        }
-
-        private static BlockType ParseBlockType(string type)
-        {
-            switch (type)
-            {
-                case "instantinvites":
-                case "invite":
-                case "inv":
-                    return BlockType.InstantInvite;
-
-                case "youtube":
-                case "yt":
-                    return BlockType.YoutubeLink;
-
-                case "twitchstream":
-                case "stream":
-                case "tstream":
-                case "twitch":
-                    return BlockType.TwitchStream;
-
-                case "twitchvideo":
-                case "video":
-                case "tvideo":
-                    return BlockType.TwitchVideo;
-
-                case "twitchclip":
-                case "clip":
-                case "tclip":
-                    return BlockType.TwitchClip;
-
-                default:
-                    return BlockType.All;
             }
         }
     }

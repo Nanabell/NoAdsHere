@@ -10,25 +10,26 @@ using NLog;
 using NoAdsHere.Common;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
-using NoAdsHere.Database.Models.Violator;
 using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.LogService;
 using NoAdsHere.Services.Penalties;
+using NoAdsHere.Database.Models.Guild;
+using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Services.Violations
 {
     public static class Violations
     {
         private static DiscordShardedClient _client;
-        private static MongoClient _mongo;
         private static LogChannelService _logChannelService;
+        private static DatabaseService _database;
         private static Config _config;
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
         public static Task Install(IServiceProvider provider)
         {
             _client = provider.GetService<DiscordShardedClient>();
-            _mongo = provider.GetService<MongoClient>();
+            _database = provider.GetService<DatabaseService>();
             _logChannelService = provider.GetService<LogChannelService>();
             _config = provider.GetService<Config>();
             return Task.CompletedTask;
@@ -36,7 +37,7 @@ namespace NoAdsHere.Services.Violations
 
         public static async Task Add(ICommandContext context, BlockType blockType)
         {
-            var violator = await _mongo.GetCollection<Violator>(_client).GetUserAsync(context.Guild.Id, context.User.Id);
+            var violator = await _database.GetViolatorAsync(context.Guild.Id, context.User.Id);
             violator = await TryDecreasePoints(context, violator).ConfigureAwait(false);
             violator = await IncreasePoint(context, violator).ConfigureAwait(false);
             await ExecutePenalty(context, violator, blockType).ConfigureAwait(false);
@@ -47,22 +48,20 @@ namespace NoAdsHere.Services.Violations
             violator.LatestViolation = DateTime.UtcNow;
             violator.Points++;
             Logger.Info($"{context.User}'s Points {violator.Points - 1} => {violator.Points}");
-            await violator.SaveAsync();
+            await violator.UpdateAsync();
             return violator;
         }
 
         private static async Task ExecutePenalty(ICommandContext context, Violator violator, BlockType blockType)
         {
-            var penalties = await _mongo.GetCollection<Penalty>(_client).GetPenaltiesAsync(violator.GuildId);
-            var collection = _mongo.GetCollection<Stats>(_client);
-            var stats = await collection.GetGuildStatsAsync(context.Guild);
+            var penalties = await _database.GetPenaltiesAsync(violator.GuildId);
+            var stats = await _database.GetStatisticsAsync(context.Guild.Id);
             stats.Blocks++;
 
             foreach (var penalty in penalties.OrderBy(p => p.RequiredPoints))
             {
                 if (violator.Points != penalty.RequiredPoints) continue;
                 var message = penalty.Message ?? GetDefaultMessage(penalty.PenaltyType);
-
 
                 string logresponse;
                 switch (penalty.PenaltyType)
@@ -114,7 +113,7 @@ namespace NoAdsHere.Services.Violations
                         throw new ArgumentOutOfRangeException();
                 }
             }
-            await stats.SaveAsync();
+            await stats.UpdateAsync();
 
             if (violator.Points >= penalties.Max(p => p.RequiredPoints))
             {
@@ -181,7 +180,7 @@ namespace NoAdsHere.Services.Violations
                 {
                     if (decPoints == violator.Points)
                         break;
-                    
+
                     time = time.AddHours(_config.PointDecreaseHours);
                     decPoints++;
                     violator.Points = violator.Points - decPoints <= 0 ? 0 : violator.Points - decPoints;
@@ -190,7 +189,7 @@ namespace NoAdsHere.Services.Violations
                 else break;
             }
             Logger.Info($"Decreased {context.User}'s points({violator.Points + decPoints}) by {decPoints} for a total of {violator.Points}");
-            await violator.SaveAsync();
+            await violator.UpdateAsync();
             return violator;
         }
     }

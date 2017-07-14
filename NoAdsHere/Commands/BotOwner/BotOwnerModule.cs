@@ -12,17 +12,18 @@ using NLog;
 using NoAdsHere.Commands.Penalties;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.Global;
+using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Commands.BotOwner
 {
     [Name("Bot Owner")]
     public class BotOwnerModule : ModuleBase
     {
-        private readonly MongoClient _mongo;
+        private readonly DatabaseService _database;
 
-        public BotOwnerModule(IServiceProvider provider)
+        public BotOwnerModule(DatabaseService database)
         {
-            _mongo = provider.GetService<MongoClient>();
+            _database = database;
         }
 
         [Command("Shutdown")]
@@ -40,7 +41,7 @@ namespace NoAdsHere.Commands.BotOwner
         private static async Task StopAsync(DiscordShardedClient client)
         {
             await CommandHandler.StopHandler();
-            
+
             await client.LogoutAsync();
             await client.StopAsync();
             var logger = LogManager.GetLogger("Discord");
@@ -48,45 +49,27 @@ namespace NoAdsHere.Commands.BotOwner
             Environment.Exit(0);
         }
 
-        [Command("Reset all guilds.")]
-        [RequireOwner]
-        public async Task Reset()
-        {
-            var database = _mongo.GetDatabase(Context.Client.CurrentUser.Username.Replace(" ", ""));
-            database.DropCollection("Penalty");
-
-            var counter = 0;
-            foreach (var guild in await Context.Client.GetGuildsAsync())
-            {
-                counter++;
-                await PenaltyModule.Restore(_mongo, Context.Client as DiscordShardedClient, guild as SocketGuild);
-
-            }
-            await ReplyAsync($"{counter} guilds have been reset.");
-        
-        }
-
         [Command("Add Master")]
         [RequireOwner]
         public async Task Add_Master(IUser user)
         {
             var newMaster = new Master(user.Id);
-            if (await newMaster.InsertAsync())
+            try
             {
+                await newMaster.InsertAsync();
                 await ReplyAsync($"{user} added to global Masters!");
             }
-            else
+            catch
             {
                 await ReplyAsync($"{user} is already a Master.");
             }
-            
         }
 
         [Command("Remove Master")]
         [RequireOwner]
         public async Task Remove_Master(IUser user)
         {
-            var master = await _mongo.GetCollection<Master>(Context.Client).GetMasterAsync(user.Id);
+            var master = await _database.GetMasterAsync(user.Id);
 
             if (master != null)
             {
@@ -123,7 +106,7 @@ namespace NoAdsHere.Commands.BotOwner
                     Context = Context,
                     Message = Context.Message as SocketUserMessage,
                     Client = Context.Client as DiscordShardedClient,
-                    Mongo = _mongo
+                    Database = _database
                 };
 
                 var sopts = ScriptOptions.Default;
@@ -147,7 +130,7 @@ namespace NoAdsHere.Commands.BotOwner
                     msg).ConfigureAwait(false);
             }
         }
-        
+
         public class Globals
         {
             public ICommandContext Context { get; set; }
@@ -156,15 +139,12 @@ namespace NoAdsHere.Commands.BotOwner
             public SocketGuild Guild => Channel.Guild;
             public SocketUser User => Message.Author;
             public DiscordShardedClient Client { get; set; }
-            public MongoClient Mongo { get; set; }
+            public DatabaseService Database { get; set; }
         }
 
-
-
-
-        
         private Task<IUserMessage> SendEmbedAsync(EmbedBuilder embed, IUserMessage nmsg)
             => SendEmbedAsync(embed, null, nmsg);
+
         private Task<IUserMessage> SendEmbedAsync(EmbedBuilder embed)
             => SendEmbedAsync(embed, null, Context.Message);
 
@@ -185,7 +165,7 @@ namespace NoAdsHere.Commands.BotOwner
 
             return message;
         }
-        
+
         private static EmbedBuilder BuildEmbed(string title, string desc, int type)
         {
             var embed = new EmbedBuilder

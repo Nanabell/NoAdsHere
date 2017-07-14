@@ -7,21 +7,21 @@ using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
-using NoAdsHere.Database.Models.Violator;
 using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.Violations;
+using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Commands.Ungrouped
 {
     [Name("Not Grouped")]
     public class UngroupedModule : ModuleBase
     {
-        private readonly MongoClient _mongo;
+        private readonly DatabaseService _database;
         private readonly Config _config;
 
-        public UngroupedModule(MongoClient mongo, Config config)
+        public UngroupedModule(DatabaseService database, Config config)
         {
-            _mongo = mongo;
+            _database = database;
             _config = config;
         }
 
@@ -45,8 +45,8 @@ namespace NoAdsHere.Commands.Ungrouped
         [RequirePermission(AccessLevel.User)]
         public async Task My_Points()
         {
-            var violator = await _mongo.GetCollection<Violator>(Context.Client).GetUserAsync(Context.Guild.Id, Context.User.Id);
-            var penalties = await _mongo.GetCollection<Penalty>(Context.Client).GetPenaltiesAsync(Context.Guild.Id);
+            var violator = await _database.GetViolatorAsync(Context.Guild.Id, Context.User.Id);
+            var penalties = await _database.GetPenaltiesAsync(Context.Guild.Id);
 
             violator = await Violations.TryDecreasePoints(Context, violator);
 

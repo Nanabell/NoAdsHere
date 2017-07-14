@@ -13,32 +13,30 @@ using System.Collections.Generic;
 using NLog;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
+using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Commands.Penalties
 {
     [Name("Penalties"), Alias("Penalty"), Group("Penalties")]
     public class PenaltyModule : ModuleBase
     {
-        private readonly MongoClient _mongo;
+        private readonly DatabaseService _database;
         private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
 
-        public PenaltyModule(IServiceProvider provider)
+        public PenaltyModule(DatabaseService database)
         {
-            _mongo = provider.GetService<MongoClient>();
+            _database = database;
         }
 
         [Command("Add")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Add(string type, int at, bool autoDelete = false, [Remainder]string message = null)
+        public async Task Add(PenaltyType type, int at, bool autoDelete = false, [Remainder]string message = null)
         {
-            var collection = _mongo.GetCollection<Penalty>(Context.Client);
-            var allpenalties = await collection.GetPenaltiesAsync(Context.Guild.Id);
+            var allpenalties = await _database.GetPenaltiesAsync(Context.Guild.Id);
             var penaltyCount = allpenalties.Count;
 
-            var penatlyType = PenaltyParser(type.ToLower());
-
-            var newPenalty = new Penalty(Context.Guild.Id, penaltyCount + 1, penatlyType, at, message, autoDelete);
-            await collection.InsertOneAsync(newPenalty);
+            var newPenalty = new Penalty(Context.Guild.Id, penaltyCount + 1, type, at, message, autoDelete);
+            await _database.InsertOneAsync(newPenalty);
 
             if (at == 0)
                 await ReplyAsync($":white_check_mark: Penalty {type}`(ID: {penaltyCount + 1})` has been added but is disabled. :white_check_mark:");
@@ -50,12 +48,11 @@ namespace NoAdsHere.Commands.Penalties
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task Remove(int penaltyId)
         {
-            var collection = _mongo.GetCollection<Penalty>(Context.Client);
-            var penalty = await collection.GetPenaltyAsync(Context.Guild.Id, penaltyId);
+            var penalty = await _database.GetPenaltyAsync(Context.Guild.Id, penaltyId);
 
             if (penalty != null)
             {
-                await collection.DeleteAsync(penalty);
+                await penalty.DeleteAsync();
                 await ReplyAsync($":white_check_mark: Penalty  {penalty.PenaltyType}`({penalty.PenaltyId})` removed :white_check_mark:");
             }
             else
@@ -68,8 +65,7 @@ namespace NoAdsHere.Commands.Penalties
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task List()
         {
-            var collection = _mongo.GetCollection<Penalty>(Context.Client);
-            var penalties = await collection.GetPenaltiesAsync(Context.Guild.Id);
+            var penalties = await _database.GetPenaltiesAsync(Context.Guild.Id);
 
             var sb = new StringBuilder();
             sb.AppendLine("```");
@@ -86,44 +82,20 @@ namespace NoAdsHere.Commands.Penalties
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task Default()
         {
-            var collection = _mongo.GetCollection<Penalty>(Context.Client);
-            var penalties = await collection.GetPenaltiesAsync(Context.Guild.Id);
+            var penalties = await _database.GetPenaltiesAsync(Context.Guild.Id);
 
             foreach (var penalty in penalties)
             {
-                await collection.DeleteAsync(penalty);
+                await penalty.DeleteAsync();
             }
-            await Restore(_mongo, Context.Client as DiscordShardedClient, Context.Guild as SocketGuild).ConfigureAwait(false);
+            await Restore(_database, Context.Client, Context.Guild).ConfigureAwait(false);
 
             await ReplyAsync("Penalties have been restored to default.");
         }
 
-        private static PenaltyType PenaltyParser(string type)
+        public static async Task Restore(DatabaseService database, IDiscordClient client, IGuild guild)
         {
-            switch (type)
-            {
-                case "nothing":
-                case "info":
-                    return PenaltyType.Nothing;
-
-                case "warn":
-                    return PenaltyType.Warn;
-
-                case "kick":
-                    return PenaltyType.Kick;
-
-                case "ban":
-                    return PenaltyType.Ban;
-
-                default:
-                    return PenaltyType.Nothing;
-            }
-        }
-
-        public static async Task Restore(MongoClient mongo, IDiscordClient client, SocketGuild guild)
-        {
-            var collection = mongo.GetCollection<Penalty>(client);
-            var penalties = await collection.GetPenaltiesAsync(guild.Id);
+            var penalties = await database.GetPenaltiesAsync(guild.Id);
             var newPenalties = new List<Penalty>();
 
             if (penalties.All(p => p.PenaltyId != 1))
@@ -137,7 +109,7 @@ namespace NoAdsHere.Commands.Penalties
 
             if (newPenalties.Any())
             {
-                await collection.InsertManyAsync(newPenalties);
+                await database.InsertManyAsync(newPenalties);
                 Logger.Info($"Added default penalties to guild {guild}");
             }
         }

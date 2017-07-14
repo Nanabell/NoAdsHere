@@ -1,10 +1,13 @@
 using System.Linq;
 using System.Threading.Tasks;
 using MongoDB.Bson;
+using MongoDB.Driver;
+using NoAdsHere.Services.Database;
+using System;
 
 namespace NoAdsHere.Database.Models.Global
 {
-    public class Master : DatabaseBase, IIndexed
+    public class Master : DatabaseService, IIndexed
     {
         public Master(ulong userId)
         {
@@ -14,20 +17,31 @@ namespace NoAdsHere.Database.Models.Global
         public ObjectId Id { get; set; }
         public ulong UserId { get; set; }
 
-        internal async Task DeleteAsync()
+        internal async Task InsertAsync()
         {
-            var collection = Mongo.GetCollection<Master>(Client);
-            await collection.DeleteAsync(this);
+            var collection = _db.GetCollection<Master>();
+            var master = GetMasterAsync(UserId);
+
+            if (master == null)
+            {
+                await collection.InsertOneAsync(this);
+            }
+            else
+            {
+                throw new ArgumentException(nameof(master));
+            }
         }
 
-        internal async Task<bool> InsertAsync()
+        internal async Task<DeleteResult> DeleteAsync()
         {
-            var collection = Mongo.GetCollection<Master>(Client);
-            var masters = await collection.GetMasterAsync(UserId);
+            var collection = _db.GetCollection<Master>();
+            return await collection.DeleteOneAsync(i => i.Id == Id);
+        }
 
-            if (masters != null) return false;
-            await collection.InsertOneAsync(this);
-            return true;
+        internal async Task<ReplaceOneResult> UpdateAsync()
+        {
+            var collection = _db.GetCollection<Master>();
+            return await collection.ReplaceOneAsync(i => i.Id == Id, this, new UpdateOptions { IsUpsert = true });
         }
     }
 }
