@@ -96,7 +96,7 @@ namespace NoAdsHere
         }
 
         private DatabaseService ConfigureDatabaseService()
-            => new DatabaseService(_mongo, "NoAdsHere");
+            => new DatabaseService(_mongo, _config.Database.UseDb);
 
         private IServiceProvider ConfigureServices()
         {

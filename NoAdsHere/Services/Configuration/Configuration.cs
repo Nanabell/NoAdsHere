@@ -21,7 +21,7 @@ namespace NoAdsHere.Services.Configuration
 
         [JsonProperty("command_on_mention")]
         public bool TriggerOnMention { get; set; } = true;
-        
+
         [JsonProperty("shards")]
         public int TotalShards { get; set; } = 1;
 
@@ -41,6 +41,9 @@ namespace NoAdsHere.Services.Configuration
 
             [JsonProperty("password")]
             public string Password { get; set; } = "password";
+
+            [JsonProperty("use-db")]
+            public string UseDb { get; set; } = "NoAdsHere";
 
             [JsonIgnore]
             public string ConnectionString => $"mongodb://{Username}:{Password}@{Host}:{Port}/{Db}";
@@ -76,7 +79,7 @@ namespace NoAdsHere.Services.Configuration
 
         [JsonProperty("point_decrease_hours")]
         public double PointDecreaseHours { get; set; } = 12;
-        
+
         [JsonProperty("max_levenshtein_distance")]
         public int MaxLevenshteinDistance { get; set; } = 4;
 
