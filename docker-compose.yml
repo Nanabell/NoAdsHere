@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  noadshere:
+    image: noadshere
+    build:
+      context: ./NoAdsHere
+      dockerfile: Dockerfile
