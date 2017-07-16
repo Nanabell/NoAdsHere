@@ -6,3 +6,11 @@ services:
     build:
       context: ./NoAdsHere
       dockerfile: Dockerfile
+    depends_on:
+      - database
+      
+  database:
+    image: mongo:latest
+    command: "--smallfiles"
+    ports:
+      - 27017:27017

@@ -80,7 +80,17 @@ namespace NoAdsHere
 
         private MongoClient CreateDatabaseConnection()
         {
-            _logger.Info("Connecting to Mongo Database");
+            bool connected;
+            _logger.Info("Attempting to connect to Docker Database");
+            var docker = new MongoClient("mongodb://database");
+            var db = docker.GetDatabase("admin");
+            connected = db.RunCommandAsync((Command<BsonDocument>)"{ping:1}").Wait(2000);
+            if (connected)
+            {
+                _logger.Info("Successfully conencted to docker database");
+                return docker;
+            }
+            _logger.Fatal("Failed to connect to docker database falling back to config database");
             return new MongoClient(_config.Database.ConnectionString);
         }
 
