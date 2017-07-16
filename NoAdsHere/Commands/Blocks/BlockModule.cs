@@ -33,6 +33,8 @@ namespace NoAdsHere.Commands.Blocks
             {
                 foreach (BlockType block in Enum.GetValues(typeof(BlockType)))
                 {
+                    if (block == BlockType.All)
+                        continue;
                     success = await AntiAds.TryEnableGuild(block, Context.Guild.Id);
                 }
             }
@@ -65,6 +67,8 @@ namespace NoAdsHere.Commands.Blocks
             {
                 foreach (BlockType block in Enum.GetValues(typeof(BlockType)))
                 {
+                    if (block == BlockType.All)
+                        continue;
                     success = await AntiAds.TryDisableGuild(block, Context.Guild.Id);
                 }
             }

@@ -186,8 +186,9 @@ namespace NoAdsHere.Services.AntiAds
 
         private static async Task UpdateBlockEntry(BlockType type, ulong guildId, bool isEnabled)
         {
-            var block = await _database.GetBlockAsync(guildId, type);
-            await block.UpdateAsync();
+            var block = await _database.GetBlockAsync(guildId, type, isEnabled);
+            if (!isEnabled && block != null)
+                await block.DeleteAsync();
         }
 
         private static async Task<bool> IsToDelete(ICommandContext context, BlockType blockType)
