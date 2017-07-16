@@ -91,7 +91,7 @@ namespace NoAdsHere.Commands.Blocks
             }
         }
 
-        private static BlockType ParseBlockType(string type)
+        public static BlockType ParseBlockType(string type)
         {
             switch (type)
             {

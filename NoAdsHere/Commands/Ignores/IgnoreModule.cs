@@ -44,8 +44,9 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Add")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Add(BlockType type, IGuildUser user)
+        public async Task Add(string blocktype, IGuildUser user)
         {
+            var type = BlockModule.ParseBlockType(blocktype.ToLower());
             var ignores = await _database.GetUserIgnoresAsync(Context.Guild.Id, type);
 
             if (ignores.All(ignore => ignore.IgnoredId != user.Id))
@@ -122,8 +123,9 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Add")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Add(BlockType type, IRole role)
+        public async Task Add(string blocktype, IRole role)
         {
+            var type = BlockModule.ParseBlockType(blocktype.ToLower());
             var ignores = await _database.GetRoleIgnoresAsync(Context.Guild.Id, type);
             var roleIgnores = ignores.GetIgnoreType(IgnoreType.Role);
 
@@ -143,8 +145,9 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Add")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Add(BlockType type, ITextChannel channel)
+        public async Task Add(string blocktype, ITextChannel channel)
         {
+            var type = BlockModule.ParseBlockType(blocktype.ToLower());
             var ignores = await _database.GetChannelIgnoresAsync(Context.Guild.Id, type);
             var channelIgnores = ignores.GetIgnoreType(IgnoreType.Channel);
 
@@ -164,8 +167,9 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Remove")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Remove(BlockType type, IGuildUser user)
+        public async Task Remove(string blocktype, IGuildUser user)
         {
+            var type = BlockModule.ParseBlockType(blocktype.ToLower());
             var ignores = await _database.GetUserIgnoresAsync(Context.Guild.Id, type);
             var userIgnores = ignores.GetIgnoreType(IgnoreType.User);
 
@@ -185,8 +189,9 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Remove")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Remove(BlockType type, IRole role)
+        public async Task Remove(string blocktype, IRole role)
         {
+            var type = BlockModule.ParseBlockType(blocktype.ToLower());
             var ignores = await _database.GetRoleIgnoresAsync(Context.Guild.Id, type);
             var roleIgnores = ignores.GetIgnoreType(IgnoreType.Role);
 
@@ -206,8 +211,9 @@ namespace NoAdsHere.Commands.Ignores
 
         [Command("Remove")]
         [RequirePermission(AccessLevel.HighModerator)]
-        public async Task Remove(BlockType type, ITextChannel channel)
+        public async Task Remove(string blocktype, ITextChannel channel)
         {
+            var type = BlockModule.ParseBlockType(blocktype.ToLower());
             var ignores = await _database.GetChannelIgnoresAsync(Context.Guild.Id, type);
             var channelIgnores = ignores.GetIgnoreType(IgnoreType.Channel);
 
