@@ -1,14 +1,11 @@
-﻿using Discord;
-using MongoDB.Driver;
+﻿using MongoDB.Driver;
 using NoAdsHere.Common;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.Global;
 using NoAdsHere.Database.Models.Guild;
 using NoAdsHere.Database.Models.GuildSettings;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Services.Database
@@ -87,13 +84,13 @@ namespace NoAdsHere.Services.Database
             };
         }
 
-        internal async Task<Block> GetBlockAsync(ulong guildId, BlockType blockType)
+        internal async Task<Block> GetBlockAsync(ulong guildId, BlockType blockType, bool createNew = true)
         {
             var collection = _db.GetCollection<Block>();
             var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.BlockType == blockType);
             var result = await cursor.SingleOrDefaultAsync();
 
-            if (result != null)
+            if (result != null || !createNew)
                 return result;
 
             await collection.InsertOneAsync(new Block(guildId, blockType));
