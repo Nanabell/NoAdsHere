@@ -6,11 +6,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
-using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
 using NLog;
-using NoAdsHere.Commands.Penalties;
-using NoAdsHere.Database;
 using NoAdsHere.Database.Models.Global;
 using NoAdsHere.Services.Database;
 

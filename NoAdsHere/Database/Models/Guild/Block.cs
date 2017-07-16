@@ -3,7 +3,6 @@ using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using NoAdsHere.Common;
 using NoAdsHere.Services.Database;
-using System;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Database.Models.GuildSettings

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.InteractiveCommands;
@@ -9,8 +8,6 @@ using MongoDB.Driver;
 using NLog;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database;
-using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Services.Database;
 using NoAdsHere.Database.Models.Guild;
 

@@ -3,11 +3,8 @@ using System.Threading.Tasks;
 using Discord;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using NoAdsHere.Database.Models.GuildSettings;
 using System.Collections.Generic;
-using NoAdsHere.Common;
 using NoAdsHere.Database.Models.FAQ;
-using NoAdsHere.Database.Models.Global;
 
 namespace NoAdsHere.Database
 {

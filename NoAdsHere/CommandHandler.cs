@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using NLog.Fluent;
 using NoAdsHere.Common;
 using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.Events;

@@ -4,9 +4,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
-using NoAdsHere.Database;
-using NoAdsHere.Database.Models.Global;
 using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Common.Preconditions

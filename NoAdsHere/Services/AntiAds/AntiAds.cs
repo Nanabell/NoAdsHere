@@ -8,11 +8,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
 using NoAdsHere.Common;
-using NoAdsHere.Database;
-using NoAdsHere.Database.Models.Global;
-using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Services.AntiAds

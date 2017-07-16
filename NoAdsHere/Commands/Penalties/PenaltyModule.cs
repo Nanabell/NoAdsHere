@@ -1,14 +1,9 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
-using NoAdsHere.Database;
 using NoAdsHere.Database.Models.GuildSettings;
-using Discord.WebSocket;
 using System.Collections.Generic;
 using NLog;
 using NoAdsHere.Common;

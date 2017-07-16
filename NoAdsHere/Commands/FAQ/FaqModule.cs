@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -22,14 +21,14 @@ namespace NoAdsHere.Commands.FAQ
             _faqSystem = faqSystem;
             _interactiveService = interactiveService;
         }
-        
+
         [Command("Add", RunMode = RunMode.Async)]
         [RequirePermission(AccessLevel.HighModerator)]
         [Priority(1)]
         public async Task Add([Remainder] string stuff = null)
         {
             var header = await ReplyAsync("**FAQ Entry Setup:** *(reply with cancel to cancel at any time)*");
-            
+
             var msg = await ReplyAsync($"{Context.User.Mention} Please give a name for the new FAQ entry!");
             var nameMessage = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30));
             var name = nameMessage.Content;

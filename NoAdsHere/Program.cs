@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using Discord.Commands;
 using NoAdsHere.Services.Configuration;
-using NoAdsHere.Database;
 using Discord.Addons.InteractiveCommands;
 using NoAdsHere.Services.Events;
 using NoAdsHere.Services.FAQ;

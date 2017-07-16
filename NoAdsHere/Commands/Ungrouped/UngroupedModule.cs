@@ -2,11 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using MongoDB.Driver;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database;
-using NoAdsHere.Database.Models.GuildSettings;
 using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.Violations;
 using NoAdsHere.Services.Database;

@@ -4,7 +4,6 @@ using NoAdsHere.Common;
 using System.Threading.Tasks;
 using MongoDB.Driver;
 using NoAdsHere.Services.Database;
-using System.Linq;
 
 namespace NoAdsHere.Database.Models.GuildSettings
 {

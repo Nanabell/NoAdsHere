@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -7,6 +5,8 @@ using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Services.AntiAds;
 using NoAdsHere.Services.LogService;
+using System;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Blocks
 {
