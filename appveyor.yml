@@ -1,6 +1,6 @@
 version: '1.0.{build}'
 configuration:
-  - Debug
+#  - Debug
   - Release
 platform: Any CPU
 hosts:
@@ -18,4 +18,4 @@ build_script:
 #before_test:
   #- ps: >-
 test_script:
-  - ps: dotnet test UnitTests/UnitTests.csproj -c "%CONFIGURATION%" --no-build
+  - ps: dotnet test UnitTests/UnitTests.csproj -c Release --no-build
