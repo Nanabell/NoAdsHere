@@ -3,7 +3,8 @@ configuration:
   - Debug
   - Release
 platform: Any CPU
-cache:
+hosts:
+  api.nuget.org: 93.184.221.200
 environment:
   # Don't report back to the mothership
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
