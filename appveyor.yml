@@ -15,6 +15,8 @@ before_build:
 build_script:
   - dotnet build "NoAdsHere\NoAdsHere.csproj" -c %CONFIGURATION% --no-dependencies
   - dotnet build "UnitTests\UnitTests.csproj" -c %CONFIGURATION% --no-dependencies
-#test:
-#  assemblies:
-#    - UnitTests\bin\x86\%CONFIGURATION%\netcoreapp1.1\UnitTests.dll
+test_script:
+  - ps: >-
+    if ($APPVEYOR_PULL_REQUEST_NUMBER -eq "") {
+      dotnet test UnitTests/UnitTests.csproj -c "Release" --no-build
+    }
