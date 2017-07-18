@@ -16,7 +16,4 @@ build_script:
   - dotnet build "NoAdsHere\NoAdsHere.csproj" -c %CONFIGURATION% --no-dependencies
   - dotnet build "UnitTests\UnitTests.csproj" -c %CONFIGURATION% --no-dependencies
 test_script:
-  - ps: >-
-    if ($APPVEYOR_PULL_REQUEST_NUMBER -eq "") {
-      dotnet test UnitTests/UnitTests.csproj -c "Release" --no-build
-    };
+  - ps: dotnet test UnitTests/UnitTests.csproj -c "Release" --no-build
