@@ -6,11 +6,14 @@ services:
     build:
       context: ./NoAdsHere
       dockerfile: Dockerfile
+    volumes: 
+      - ./NoAdsHere/config.json:/app/config.json
     depends_on:
       - database
       
   database:
     image: mongo:latest
     command: "--smallfiles"
+    volume_driver: db
     ports:
       - 27017:27017
