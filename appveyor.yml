@@ -8,6 +8,8 @@ hosts:
 environment:
   # Don't report back to the mothership
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+services:
+  - mongodb
 init:
   - ps: $Env:BUILD = "$($Env:APPVEYOR_BUILD_NUMBER.PadLeft(5, "0"))"
 before_build:
