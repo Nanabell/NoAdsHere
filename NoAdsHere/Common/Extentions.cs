@@ -42,24 +42,24 @@ namespace NoAdsHere.Common
             return ret;
         }
 
-        public static bool CheckAllowedStrings(this IEnumerable<AllowString> allowStrings, ITextChannel channel, IGuildUser user, string message)
+        public static bool CheckAllowedStrings(this IEnumerable<AllowString> allowStrings, ulong channelId, ulong userId, IEnumerable<ulong> roleIds, string message)
         {
             foreach (var allowString in allowStrings)
             {
                 switch (allowString.IgnoreType)
                 {
                     case IgnoreType.User:
-                        if (user.Id == allowString.IgnoredId)
+                        if (userId == allowString.IgnoredId)
                             return message.CompareAllowedNoCase(allowString);
                         break;
 
                     case IgnoreType.Role:
-                        if (user.RoleIds.Any(roleId => roleId == allowString.IgnoredId))
+                        if (roleIds.Any(roleId => roleId == allowString.IgnoredId))
                             return message.CompareAllowedNoCase(allowString);
                         break;
 
                     case IgnoreType.Channel:
-                        if (channel.Id == allowString.IgnoredId)
+                        if (channelId == allowString.IgnoredId)
                             return message.CompareAllowedNoCase(allowString);
                         break;
 

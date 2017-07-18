@@ -132,32 +132,32 @@ namespace NoAdsHere.Services.AntiAds
 
         private static async Task TryDelete(ICommandContext context, BlockType type)
         {
-            if (await IsToDelete(context.Channel as ITextChannel, context.User as IGuildUser, context.Message.Content).ConfigureAwait(false))
+            if (await IsToDelete(context.Guild.Id, context.Channel.Id, context.User.Id, ((IGuildUser)context.User).RoleIds, context.Message.Content).ConfigureAwait(false))
             {
                 await DeleteMessage(context, type.ToString()).ConfigureAwait(false);
                 await Violations.Violations.Add(context, type).ConfigureAwait(false);
             }
         }
 
-        public static async Task<bool> IsToDelete(ITextChannel channel, IGuildUser user, string message)
+        public static async Task<bool> IsToDelete(ulong guildId, ulong channelId, ulong userId, IEnumerable<ulong> roleIds, string message)
         {
             var masters = await _database.GetMastersAsync();
-            if (masters.Any(m => m.UserId == user.Id)) return false;
+            if (masters.Any(m => m.UserId == userId)) return false;
 
-            var channelIgnores = await _database.GetChannelIgnoresAsync(channel.GuildId);
-            if (channelIgnores.Any(c => c.IgnoredId == channel.Id)) return false;
+            var channelIgnores = await _database.GetChannelIgnoresAsync(guildId);
+            if (channelIgnores.Any(c => c.IgnoredId == channelId)) return false;
 
-            var userIgnores = await _database.GetUserIgnoresAsync(channel.GuildId);
-            if (userIgnores.Any(u => u.IgnoredId == user.Id)) return false;
+            var userIgnores = await _database.GetUserIgnoresAsync(guildId);
+            if (userIgnores.Any(u => u.IgnoredId == userId)) return false;
 
-            var roleIgnores = await _database.GetRoleIgnoresAsync(channel.GuildId);
-            if (user.RoleIds.Any(roleId => roleIgnores.Any(r => r.IgnoredId == roleId))) return false;
+            var roleIgnores = await _database.GetRoleIgnoresAsync(guildId);
+            if (roleIds.Any(roleId => roleIgnores.Any(r => r.IgnoredId == roleId))) return false;
 
-            var aStrings = await _database.GetIgnoreStringsAsync(channel.GuildId);
-            return !aStrings.CheckAllowedStrings(channel, user, message);
+            var aStrings = await _database.GetIgnoreStringsAsync(guildId);
+            return !aStrings.CheckAllowedStrings(channelId, userId, roleIds, message);
         }
 
-        public static async Task DeleteMessage(ICommandContext context, string reason)
+        private static async Task DeleteMessage(ICommandContext context, string reason)
         {
             if (context.Channel.CheckChannelPermission(ChannelPermission.ManageMessages,
                     await context.Guild.GetCurrentUserAsync()))
