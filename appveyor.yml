@@ -17,7 +17,5 @@ before_build:
 build_script:
   - dotnet build "NoAdsHere\NoAdsHere.csproj" -c %CONFIGURATION% --no-dependencies
   - dotnet build "UnitTests\UnitTests.csproj" -c %CONFIGURATION% --no-dependencies
-#before_test:
-  #- ps: >-
-test_script:
-  - ps: dotnet test UnitTests/UnitTests.csproj -c Release --no-build
+#test_script:
+#  - ps: dotnet test UnitTests/UnitTests.csproj -c Release --no-build
