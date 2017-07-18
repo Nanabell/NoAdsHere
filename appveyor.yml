@@ -18,4 +18,4 @@ build_script:
 #before_test:
   #- ps: >-
 test_script:
-  - ps: dotnet test UnitTests/UnitTests.csproj -c $Env:CONFIGURATION --no-build
+  - ps: dotnet test UnitTests/UnitTests.csproj -c "%CONFIGURATION%" --no-build
