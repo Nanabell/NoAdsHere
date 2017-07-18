@@ -14,3 +14,6 @@ before_build:
 build_script:
   - dotnet build "NoAdsHere\NoAdsHere.csproj" -c Release --no-dependencies
   - dotnet build "UnitTests\UnitTests.csproj" -c Release --no-dependencies
+test:
+  assemblies:
+    - UnitTests\bin\x86\**\*.UnitTests.dll
