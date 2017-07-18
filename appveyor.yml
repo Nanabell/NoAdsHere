@@ -19,4 +19,4 @@ test_script:
   - ps: >-
     if ($APPVEYOR_PULL_REQUEST_NUMBER -eq "") {
       dotnet test UnitTests/UnitTests.csproj -c "Release" --no-build
-    }:
+    };
