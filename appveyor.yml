@@ -15,10 +15,7 @@ before_build:
 build_script:
   - dotnet build "NoAdsHere\NoAdsHere.csproj" -c %CONFIGURATION% --no-dependencies
   - dotnet build "UnitTests\UnitTests.csproj" -c %CONFIGURATION% --no-dependencies
-before_test:
-  - ps: >-
-$a = Get-Content 'NoAdsHere\config.json' -raw | ConvertFrom-Json
-$a.token = %BOTTOKEN%
-$a | ConvertTo-Json | set-content 'UnitTests\UnitTests\bin\Any CPU\%CONFIGURATION%\netcoreapp1.1\config.json'
+#before_test:
+  #- ps: >-
 test_script:
   - ps: dotnet test UnitTests/UnitTests.csproj -c "Release" --no-build
