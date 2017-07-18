@@ -7,15 +7,15 @@
     <PackageReference Include="Discord.Addons.InteractiveCommands">
       <Version>1.2.4</Version>
     </PackageReference>
-    <PackageReference Include="Discord.Net" Version="1.0.2-build-00795" />
-    <PackageReference Include="Discord.Net.Commands" Version="1.0.2-build-00795" />
-    <PackageReference Include="Discord.Net.Core" Version="1.0.2-build-00795" />
-    <PackageReference Include="Discord.Net.Rest" Version="1.0.2-build-00795" />
-    <PackageReference Include="Discord.Net.Rpc" Version="1.0.2-build-00795" />
+    <PackageReference Include="Discord.Net" Version="1.0.2-build-00800" />
+    <PackageReference Include="Discord.Net.Commands" Version="1.0.2-build-00800" />
+    <PackageReference Include="Discord.Net.Core" Version="1.0.2-build-00800" />
+    <PackageReference Include="Discord.Net.Rest" Version="1.0.2-build-00800" />
+    <PackageReference Include="Discord.Net.Rpc" Version="1.0.2-build-00800" />
     <PackageReference Include="Discord.Net.Webhook">
-      <Version>1.0.2-build-00795</Version>
+      <Version>1.0.2-build-00800</Version>
     </PackageReference>
-    <PackageReference Include="Discord.Net.WebSocket" Version="1.0.2-build-00795" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="1.0.2-build-00800" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common">
       <Version>2.3.0</Version>
     </PackageReference>
