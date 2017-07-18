@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
 using MongoDB.Driver;
-using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.Database;
 using NoAdsHere.Services.FAQ;
 using NUnit.Framework;
@@ -14,112 +10,81 @@ namespace UnitTests.FaqSystemTest
     [TestFixture]
     public class FaqSystemTests
     {
-        private DiscordShardedClient _client;
         private FaqSystem _faqSystem;
         private MongoClient _mongo;
-        private ITextChannel TestChannel => _client.GetChannel(336769094902611968) as ITextChannel;
+        private ulong TestChannel => 336769094902611968;
+        private static ulong TestGuild => 173334405438242816;
+        private static ulong TestUser => 206813496585748480;
 
         [OneTimeSetUp]
-        public async Task Init()
+        public void Init()
         {
             _mongo = new MongoClient();
-            _faqSystem = new FaqSystem(new DatabaseService(_mongo, "Test"), Config.Load());
-
-            var ready = false;
-            _client = new DiscordShardedClient();
-            await _client.LoginAsync(TokenType.Bot, Config.Load().Token);
-            await _client.StartAsync();
-
-            _client.Shards.First().Ready += () =>
-            {
-                ready = true;
-                return Task.CompletedTask;
-            };
-
-            while (!ready)
-            {
-                await Task.Delay(25);
-            }
+            _faqSystem = new FaqSystem(new DatabaseService(_mongo, "Test"));
         }
 
         [Test]
         [TestCase("UnitTest")]
         public async Task AddGuildEntry(string name)
         {
-            var me = await TestChannel.Guild.GetCurrentUserAsync();
-            Assert.IsTrue(await _faqSystem.AddGuildEntryAsync(TestChannel.Guild, me, name, "This is a Faq Entry from UnitTesting"));
+            Assert.IsTrue(await _faqSystem.AddGuildEntryAsync(TestGuild, TestUser, name, "This is a Faq Entry from UnitTesting"));
         }
 
         [Test]
         public async Task AddSameGuildEntry()
         {
-            var me = await TestChannel.Guild.GetCurrentUserAsync();
-            Assert.IsTrue(await _faqSystem.AddGuildEntryAsync(TestChannel.Guild, me, "UnitTest", "This is a Faq Entry from UnitTesting"));
-            Assert.IsFalse(await _faqSystem.AddGuildEntryAsync(TestChannel.Guild, me, "UnitTest", "This is a Faq Entry from UnitTesting"));
+            Assert.IsTrue(await _faqSystem.AddGuildEntryAsync(TestGuild, TestUser, "UnitTest", "This is a Faq Entry from UnitTesting"));
+            Assert.IsFalse(await _faqSystem.AddGuildEntryAsync(TestGuild, TestUser, "UnitTest", "This is a Faq Entry from UnitTesting"));
         }
 
         [Test]
-        public async Task AddGuildEntryEmptyName()
+        public void AddGuildEntryEmptyName()
         {
-            var me = await TestChannel.Guild.GetCurrentUserAsync();
             Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.AddGuildEntryAsync(TestChannel.Guild, me, "", "This is a Faq Entry from UnitTesting"));
+                await _faqSystem.AddGuildEntryAsync(TestGuild, TestUser, "", "This is a Faq Entry from UnitTesting"));
         }
 
         [Test]
-        public async Task AddGuildEntryEmptyContent()
+        public void AddGuildEntryEmptyContent()
         {
-            var me = await TestChannel.Guild.GetCurrentUserAsync();
             Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.AddGuildEntryAsync(TestChannel.Guild, me, "UnitTest", ""));
+                await _faqSystem.AddGuildEntryAsync(TestGuild, TestUser, "UnitTest", ""));
         }
 
         [Test]
         [TestCase("GlobalUnitTest")]
         public async Task AddGlobalEntry(string name)
         {
-            var me = await TestChannel.Guild.GetCurrentUserAsync();
-            Assert.IsTrue(await _faqSystem.AddGlobalEntryAsync(me, name, "This is a Global Faq Entry from UnitTesting"));
+            Assert.IsTrue(await _faqSystem.AddGlobalEntryAsync(TestUser, name, "This is a Global Faq Entry from UnitTesting"));
         }
 
         [Test]
         public async Task AddSameGlobalEntry()
         {
-            var me = await TestChannel.Guild.GetCurrentUserAsync();
-            Assert.IsTrue(await _faqSystem.AddGlobalEntryAsync(me, "GlobalUnitTest", "This is a Faq Entry from UnitTesting"));
-            Assert.IsFalse(await _faqSystem.AddGlobalEntryAsync(me, "GlobalUnitTest", "This is a Faq Entry from UnitTesting"));
+            Assert.IsTrue(await _faqSystem.AddGlobalEntryAsync(TestUser, "GlobalUnitTest", "This is a Faq Entry from UnitTesting"));
+            Assert.IsFalse(await _faqSystem.AddGlobalEntryAsync(TestUser, "GlobalUnitTest", "This is a Faq Entry from UnitTesting"));
         }
 
         [Test]
-        public async Task AddGlobalEntryEmptyName()
+        public void AddGlobalEntryEmptyName()
         {
-            var me = await TestChannel.Guild.GetCurrentUserAsync();
             Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.AddGlobalEntryAsync(me, null, "This is a Faq Entry from UnitTesting"));
+                await _faqSystem.AddGlobalEntryAsync(TestUser, null, "This is a Faq Entry from UnitTesting"));
         }
 
         [Test]
-        public async Task AddGlobalEntryEmptyContent()
+        public void AddGlobalEntryEmptyContent()
         {
-            var me = await TestChannel.Guild.GetCurrentUserAsync();
             Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.AddGlobalEntryAsync(me, "UnitTest", ""));
+                await _faqSystem.AddGlobalEntryAsync(TestUser, "UnitTest", ""));
         }
 
         [Test]
         public async Task GetEntry()
         {
             await AddGuildEntry("UnitTest");
-            var entry = await _faqSystem.GetGuildFaqEntryAsync(TestChannel.Guild, "UnitTest");
+            var entry = await _faqSystem.GetGuildFaqEntryAsync(TestGuild, "UnitTest");
             Assert.NotNull(entry);
-        }
-
-        [Test]
-        public async Task GetEntryNullGuild()
-        {
-            await AddGuildEntry("UnitTest");
-            Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.GetGuildFaqEntryAsync(null, "UnitTest"));
         }
 
         [Test]
@@ -136,18 +101,8 @@ namespace UnitTests.FaqSystemTest
             await AddGuildEntry("UnitTest");
             await AddGuildEntry("UnitTest2");
 
-            var entries = await _faqSystem.GetGuildEntriesAsync(TestChannel.Guild);
+            var entries = await _faqSystem.GetGuildEntriesAsync(TestGuild);
             Assert.AreEqual(2, entries.Count);
-        }
-
-        [Test]
-        public async Task GetEntriesNullGuild()
-        {
-            await AddGuildEntry("UnitTest");
-            await AddGuildEntry("UnitTest2");
-
-            Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.GetGuildEntriesAsync(null));
         }
 
         [Test]
@@ -163,7 +118,7 @@ namespace UnitTests.FaqSystemTest
         [Test]
         public async Task GetNotExistingEntry()
         {
-            var entry = await _faqSystem.GetGuildFaqEntryAsync(TestChannel.Guild, "UnitTest");
+            var entry = await _faqSystem.GetGuildFaqEntryAsync(TestGuild, "UnitTest");
             Assert.IsNull(entry);
         }
 
@@ -175,32 +130,10 @@ namespace UnitTests.FaqSystemTest
         }
 
         [Test]
-        public void AddEntryNullUser()
-        {
-            Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.AddGuildEntryAsync(TestChannel.Guild, null, "UnitTest", "This is a Faq Entry from UnitTesting"));
-        }
-
-        [Test]
-        public async Task AddEntryNullGuild()
-        {
-            var me = await TestChannel.Guild.GetCurrentUserAsync();
-            Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.AddGuildEntryAsync(null, me, "UnitTest", "This is a Faq Entry from UnitTesting"));
-        }
-
-        [Test]
-        public void AddGlobalEntryNullUser()
-        {
-            Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.AddGlobalEntryAsync(null, "UnitTest", "This is a Faq Entry from UnitTesting"));
-        }
-
-        [Test]
         public async Task RemoveEntry()
         {
             await AddGuildEntry("UnitTest");
-            var entry = await _faqSystem.GetGuildFaqEntryAsync(TestChannel.Guild, "UnitTest");
+            var entry = await _faqSystem.GetGuildFaqEntryAsync(TestGuild, "UnitTest");
             var result = await _faqSystem.RemoveGuildEntryAsync(entry);
             Assert.IsTrue(result.IsAcknowledged);
         }
@@ -232,7 +165,7 @@ namespace UnitTests.FaqSystemTest
         public async Task SaveEntry()
         {
             await AddGuildEntry("UnitTest");
-            var entry = await _faqSystem.GetGuildFaqEntryAsync(TestChannel.Guild, "UnitTest");
+            var entry = await _faqSystem.GetGuildFaqEntryAsync(TestGuild, "UnitTest");
             var result = await _faqSystem.SaveGuildEntryAsync(entry);
             Assert.IsTrue(result.IsAcknowledged);
         }
@@ -269,21 +202,8 @@ namespace UnitTests.FaqSystemTest
                 response += c;
                 await AddGuildEntry(response);
             }
-            var similars = await _faqSystem.GetSimilarGuildEntries(TestChannel.Guild, "UnitTestt");
+            var similars = await _faqSystem.GetSimilarGuildEntries(TestGuild, "UnitTestt");
             Assert.NotZero(similars.Count);
-        }
-
-        [Test]
-        public async Task GetSimilarEntriesNullGuild()
-        {
-            var response = "";
-            foreach (var c in "UnitTest")
-            {
-                response += c;
-                await AddGuildEntry(response);
-            }
-            Assert.ThrowsAsync<ArgumentNullException>(async () =>
-                await _faqSystem.GetSimilarGuildEntries(null, "UnitTestt"));
         }
 
         [Test]
@@ -308,7 +228,7 @@ namespace UnitTests.FaqSystemTest
                 response += c;
                 await AddGuildEntry(response);
             }
-            var similars = await _faqSystem.GetSimilarGuildEntries(TestChannel.Guild, "");
+            var similars = await _faqSystem.GetSimilarGuildEntries(TestGuild, "");
             Assert.NotZero(similars.Count);
         }
 
@@ -335,9 +255,6 @@ namespace UnitTests.FaqSystemTest
         public async Task Stop()
         {
             await _mongo.DropDatabaseAsync("Test");
-            await _client.StopAsync();
-            await _client.LogoutAsync();
-            _client.Dispose();
         }
     }
 }
