@@ -9,5 +9,5 @@ environment:
 before_build:
   - appveyor-retry dotnet restore -v Minimal
 build_script:
-  - dotnet build "NoAdsHere" -c %CONFIGURATION% --no-dependencies --version-suffix %LABEL%
-  - dotnet build "UnitTests" -c %CONFIGURATION% --no-dependencies --version-suffix %LABEL%
+  - dotnet build "NoAdsHere\NoAdsHere.csproj" -c %CONFIGURATION% --no-dependencies --version-suffix %LABEL%
+  - dotnet build "UnitTests\UnitTests.csproj" -c %CONFIGURATION% --no-dependencies --version-suffix %LABEL%
