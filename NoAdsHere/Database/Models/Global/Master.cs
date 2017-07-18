@@ -18,7 +18,7 @@ namespace NoAdsHere.Database.Models.Global
 
         internal async Task InsertAsync()
         {
-            var collection = _db.GetCollection<Master>();
+            var collection = Db.GetCollection<Master>();
             var master = GetMasterAsync(UserId);
 
             if (master == null)
@@ -33,13 +33,13 @@ namespace NoAdsHere.Database.Models.Global
 
         internal async Task<DeleteResult> DeleteAsync()
         {
-            var collection = _db.GetCollection<Master>();
+            var collection = Db.GetCollection<Master>();
             return await collection.DeleteOneAsync(i => i.Id == Id);
         }
 
         internal async Task<ReplaceOneResult> UpdateAsync()
         {
-            var collection = _db.GetCollection<Master>();
+            var collection = Db.GetCollection<Master>();
             return await collection.ReplaceOneAsync(i => i.Id == Id, this, new UpdateOptions { IsUpsert = true });
         }
     }

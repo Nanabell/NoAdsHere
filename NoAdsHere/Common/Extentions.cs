@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using NoAdsHere.Database.Models.GuildSettings;
+using NoAdsHere.Database.Models.Guild;
 
 namespace NoAdsHere.Common
 {
@@ -16,7 +16,7 @@ namespace NoAdsHere.Common
                 .Where(c => !char.IsWhiteSpace(c))
                 .ToArray());
         }
-        
+
         public static bool CheckChannelPermission(this IMessageChannel channel, ChannelPermission permission, IGuildUser guildUser)
         {
             var guildchannel = channel as IGuildChannel;
@@ -26,10 +26,10 @@ namespace NoAdsHere.Common
 
             return perms.Has(permission);
         }
-        
+
         public static IEnumerable<Ignore> GetIgnoreType(this IEnumerable<Ignore> ignores, IgnoreType type)
-            => ignores.Where(i => i.IgnoreType == type || i.IgnoreType == IgnoreType.All);
-        
+            => ignores.Where(i => i.IgnoreType == type);
+
         public static async Task<IEnumerable<CommandInfo>> CheckConditionsAsync(this IEnumerable<CommandInfo> commandInfos,
             ICommandContext context, IServiceProvider map = null)
         {
@@ -42,33 +42,27 @@ namespace NoAdsHere.Common
             return ret;
         }
 
-        public static bool CheckAllowedStrings(this IEnumerable<AllowString> allowStrings, ICommandContext context)
+        public static bool CheckAllowedStrings(this IEnumerable<AllowString> allowStrings, ITextChannel channel, IGuildUser user, string message)
         {
-            var guildUser = context.User as IGuildUser;
             foreach (var allowString in allowStrings)
             {
                 switch (allowString.IgnoreType)
                 {
                     case IgnoreType.User:
-                        if (context.User.Id == allowString.IgnoredId)
-                            return context.Message.Content.CompareAllowedNoCase(allowString);
+                        if (user.Id == allowString.IgnoredId)
+                            return message.CompareAllowedNoCase(allowString);
                         break;
+
                     case IgnoreType.Role:
-                        if (guildUser != null && guildUser.RoleIds.Any(roleId => roleId == allowString.IgnoredId))
-                            return context.Message.Content.CompareAllowedNoCase(allowString);
+                        if (user.RoleIds.Any(roleId => roleId == allowString.IgnoredId))
+                            return message.CompareAllowedNoCase(allowString);
                         break;
+
                     case IgnoreType.Channel:
-                        if (context.Channel.Id == allowString.IgnoredId)
-                            return context.Message.Content.CompareAllowedNoCase(allowString);
+                        if (channel.Id == allowString.IgnoredId)
+                            return message.CompareAllowedNoCase(allowString);
                         break;
-                    case IgnoreType.All:
-                        if (context.User.Id == allowString.IgnoredId)
-                            return context.Message.Content.CompareAllowedNoCase(allowString);
-                        if (context.Channel.Id == allowString.IgnoredId)
-                            return context.Message.Content.CompareAllowedNoCase(allowString);
-                        if (guildUser != null && guildUser.RoleIds.Any(roleId => roleId == allowString.IgnoredId))
-                            return context.Message.Content.CompareAllowedNoCase(allowString);
-                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException();
                 }

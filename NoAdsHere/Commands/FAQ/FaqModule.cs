@@ -58,7 +58,7 @@ namespace NoAdsHere.Commands.FAQ
             var confirmMsg = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30));
             if (confirmMsg.Content.ToLower() == "yes")
             {
-                await _faqSystem.AddGuildEntryAsync(Context, name.ToLower(), content);
+                await _faqSystem.AddGuildEntryAsync(Context.Guild, Context.User, name.ToLower(), content);
                 await header.DeleteAsync();
                 await msg.ModifyAsync(p => p.Content = ":ok_hand:");
             }
@@ -74,7 +74,7 @@ namespace NoAdsHere.Commands.FAQ
         [Priority(1)]
         public async Task Remove(string name)
         {
-            var gEntry = await _faqSystem.GetGuildFaqEntryAsync(Context.Guild.Id, name.ToLower());
+            var gEntry = await _faqSystem.GetGuildFaqEntryAsync(Context.Guild, name.ToLower());
 
             if (gEntry != null)
             {
@@ -95,7 +95,7 @@ namespace NoAdsHere.Commands.FAQ
             }
             else
             {
-                var gSimilar = await _faqSystem.GetSimilarGuildEntries(Context.Guild.Id, name.ToLower());
+                var gSimilar = await _faqSystem.GetSimilarGuildEntries(Context.Guild, name.ToLower());
                 if (gSimilar.Any())
                     await ReplyAsync($"No FAQ Entry with the name `{name}` found. Did you mean:\n`" +
                                    string.Join("`", gSimilar.Select(pair => pair.Key.Name)) + "`");

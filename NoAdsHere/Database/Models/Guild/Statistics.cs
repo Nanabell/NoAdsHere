@@ -3,7 +3,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using NoAdsHere.Services.Database;
 
-namespace NoAdsHere.Database.Models.GuildSettings
+namespace NoAdsHere.Database.Models.Guild
 {
     public class Statistics : DatabaseService, IIndexed
     {
@@ -25,13 +25,13 @@ namespace NoAdsHere.Database.Models.GuildSettings
 
         internal async Task<DeleteResult> DeleteAsync()
         {
-            var collection = _db.GetCollection<Statistics>();
+            var collection = Db.GetCollection<Statistics>();
             return await collection.DeleteOneAsync(i => i.Id == Id);
         }
 
         internal async Task<ReplaceOneResult> UpdateAsync()
         {
-            var collection = _db.GetCollection<Statistics>();
+            var collection = Db.GetCollection<Statistics>();
             return await collection.ReplaceOneAsync(i => i.Id == Id, this, new UpdateOptions { IsUpsert = true });
         }
     }

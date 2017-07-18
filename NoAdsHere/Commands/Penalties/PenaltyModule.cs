@@ -3,11 +3,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using NoAdsHere.Database.Models.GuildSettings;
 using System.Collections.Generic;
 using NLog;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
+using NoAdsHere.Database.Models.Guild;
 using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Commands.Penalties

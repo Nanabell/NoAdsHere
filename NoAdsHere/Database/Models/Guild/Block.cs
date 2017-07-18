@@ -1,11 +1,11 @@
+using System.Threading.Tasks;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using NoAdsHere.Common;
 using NoAdsHere.Services.Database;
-using System.Threading.Tasks;
 
-namespace NoAdsHere.Database.Models.GuildSettings
+namespace NoAdsHere.Database.Models.Guild
 {
     [BsonIgnoreExtraElements]
     public class Block : DatabaseService, IIndexed
@@ -22,13 +22,13 @@ namespace NoAdsHere.Database.Models.GuildSettings
 
         internal async Task<DeleteResult> DeleteAsync()
         {
-            var collection = _db.GetCollection<Block>();
+            var collection = Db.GetCollection<Block>();
             return await collection.DeleteOneAsync(i => i.Id == Id);
         }
 
         internal async Task<ReplaceOneResult> UpdateAsync()
         {
-            var collection = _db.GetCollection<Block>();
+            var collection = Db.GetCollection<Block>();
             return await collection.ReplaceOneAsync(i => i.Id == Id, this, new UpdateOptions { IsUpsert = true });
         }
     }

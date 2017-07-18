@@ -22,7 +22,7 @@ namespace NoAdsHere.Services.FAQ
         {
             _provider = provider;
             _client = provider.GetService<DiscordShardedClient>();
-            _commandService = new CommandService(new CommandServiceConfig {DefaultRunMode = RunMode.Async});
+            _commandService = new CommandService(new CommandServiceConfig { DefaultRunMode = RunMode.Async });
             return Task.CompletedTask;
         }
 
@@ -47,7 +47,7 @@ namespace NoAdsHere.Services.FAQ
                 return;
 
             var result = await _commandService.ExecuteAsync(context, argPos, _provider);
-            
+
             if (!result.IsSuccess)
                 Logger.Warn(result);
         }
@@ -56,12 +56,12 @@ namespace NoAdsHere.Services.FAQ
     internal class FaqCommands : ModuleBase
     {
         private readonly FaqSystem _faqSystem;
-        
+
         public FaqCommands(FaqSystem faqSystem)
         {
             _faqSystem = faqSystem;
         }
-        
+
         [Command("q")]
         [RequirePermission(AccessLevel.User)]
         public async Task Faq([Remainder]string name = null)
@@ -69,7 +69,7 @@ namespace NoAdsHere.Services.FAQ
             if (name == null)
             {
                 var globals = await _faqSystem.GetGlobalEntriesAsync();
-                var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild.Id);
+                var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild);
                 var response = "**Frequently Asked Questions:**";
 
                 if (globals.Any() || locals.Any())
@@ -95,32 +95,31 @@ namespace NoAdsHere.Services.FAQ
             else
             {
                 var gEntry = await _faqSystem.GetGlobalFaqEntryAsync(name);
-                var lEntry = await _faqSystem.GetGuildFaqEntryAsync(Context.Guild.Id, name);
+                var lEntry = await _faqSystem.GetGuildFaqEntryAsync(Context.Guild, name);
 
                 if (gEntry != null)
                 {
-                    await ReplyAsync(gEntry.Content);   
+                    await ReplyAsync(gEntry.Content);
                     gEntry.LastUsed = DateTime.UtcNow;
                     gEntry.UseCount++;
                     await _faqSystem.SaveGlobalEntryAsync(gEntry);
                 }
                 else if (lEntry != null)
                 {
-                    await ReplyAsync(lEntry.Content);   
+                    await ReplyAsync(lEntry.Content);
                     lEntry.LastUsed = DateTime.UtcNow;
                     lEntry.UseCount++;
                     await _faqSystem.SaveGuildEntryAsync(lEntry);
                 }
-                 
                 else
                 {
                     var globals = await _faqSystem.GetGlobalEntriesAsync();
-                    var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild.Id);
+                    var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild);
 
                     if (globals.Any() || locals.Any())
                     {
                         var gSimilar = await _faqSystem.GetSimilarGlobalEntries(name);
-                        var lSimilar = await _faqSystem.GetSimilarGuildEntries(Context.Guild.Id, name);
+                        var lSimilar = await _faqSystem.GetSimilarGuildEntries(Context.Guild, name);
 
                         if (gSimilar.Any() || lSimilar.Any())
                         {

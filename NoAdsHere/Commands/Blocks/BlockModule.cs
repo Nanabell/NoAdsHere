@@ -35,12 +35,12 @@ namespace NoAdsHere.Commands.Blocks
                 {
                     if (block == BlockType.All)
                         continue;
-                    success = await AntiAds.TryEnableGuild(block, Context.Guild.Id);
+                    success = await AntiAds.TryEnableGuild(Context.Guild.Id, block);
                 }
             }
             else
             {
-                success = await AntiAds.TryEnableGuild(blocktype, Context.Guild.Id);
+                success = await AntiAds.TryEnableGuild(Context.Guild.Id, blocktype);
             }
 
             if (success)
@@ -69,12 +69,12 @@ namespace NoAdsHere.Commands.Blocks
                 {
                     if (block == BlockType.All)
                         continue;
-                    success = await AntiAds.TryDisableGuild(block, Context.Guild.Id);
+                    success = await AntiAds.TryDisableGuild(Context.Guild.Id, block);
                 }
             }
             else
             {
-                success = await AntiAds.TryDisableGuild(blocktype, Context.Guild.Id);
+                success = await AntiAds.TryDisableGuild(Context.Guild.Id, blocktype);
             }
 
             if (success)

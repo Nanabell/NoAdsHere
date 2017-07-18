@@ -22,13 +22,13 @@ namespace NoAdsHere.Database.Models.Guild
 
         internal async Task<DeleteResult> DeleteAsync()
         {
-            var collection = _db.GetCollection<Violator>();
+            var collection = Db.GetCollection<Violator>();
             return await collection.DeleteOneAsync(i => i.Id == Id);
         }
 
         internal async Task<ReplaceOneResult> UpdateAsync()
         {
-            var collection = _db.GetCollection<Violator>();
+            var collection = Db.GetCollection<Violator>();
             return await collection.ReplaceOneAsync(i => i.Id == Id, this, new UpdateOptions { IsUpsert = true });
         }
     }

@@ -6,7 +6,7 @@ using Discord.Commands;
 using NoAdsHere.Commands.Blocks;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.Models.GuildSettings;
+using NoAdsHere.Database.Models.Guild;
 using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.Database;
 
@@ -45,7 +45,7 @@ namespace NoAdsHere.Commands.Ignores
         public async Task Add(string blocktype, IGuildUser user)
         {
             var type = BlockModule.ParseBlockType(blocktype.ToLower());
-            var ignores = await _database.GetUserIgnoresAsync(Context.Guild.Id, type);
+            var ignores = await _database.GetUserIgnoresAsync(Context.Guild.Id);
 
             if (ignores.All(ignore => ignore.IgnoredId != user.Id))
             {
@@ -124,7 +124,7 @@ namespace NoAdsHere.Commands.Ignores
         public async Task Add(string blocktype, IRole role)
         {
             var type = BlockModule.ParseBlockType(blocktype.ToLower());
-            var ignores = await _database.GetRoleIgnoresAsync(Context.Guild.Id, type);
+            var ignores = await _database.GetRoleIgnoresAsync(Context.Guild.Id);
             var roleIgnores = ignores.GetIgnoreType(IgnoreType.Role);
 
             if (roleIgnores.All(ignore => ignore.IgnoredId != role.Id))
@@ -146,7 +146,7 @@ namespace NoAdsHere.Commands.Ignores
         public async Task Add(string blocktype, ITextChannel channel)
         {
             var type = BlockModule.ParseBlockType(blocktype.ToLower());
-            var ignores = await _database.GetChannelIgnoresAsync(Context.Guild.Id, type);
+            var ignores = await _database.GetChannelIgnoresAsync(Context.Guild.Id);
             var channelIgnores = ignores.GetIgnoreType(IgnoreType.Channel);
 
             if (channelIgnores.All(ignore => ignore.IgnoredId != channel.Id))
@@ -168,7 +168,7 @@ namespace NoAdsHere.Commands.Ignores
         public async Task Remove(string blocktype, IGuildUser user)
         {
             var type = BlockModule.ParseBlockType(blocktype.ToLower());
-            var ignores = await _database.GetUserIgnoresAsync(Context.Guild.Id, type);
+            var ignores = await _database.GetUserIgnoresAsync(Context.Guild.Id);
             var userIgnores = ignores.GetIgnoreType(IgnoreType.User);
 
             var first = userIgnores.FirstOrDefault(ignore => ignore.IgnoredId == user.Id);
@@ -190,7 +190,7 @@ namespace NoAdsHere.Commands.Ignores
         public async Task Remove(string blocktype, IRole role)
         {
             var type = BlockModule.ParseBlockType(blocktype.ToLower());
-            var ignores = await _database.GetRoleIgnoresAsync(Context.Guild.Id, type);
+            var ignores = await _database.GetRoleIgnoresAsync(Context.Guild.Id);
             var roleIgnores = ignores.GetIgnoreType(IgnoreType.Role);
 
             var first = roleIgnores.FirstOrDefault(ignore => ignore.IgnoredId == role.Id);
@@ -212,7 +212,7 @@ namespace NoAdsHere.Commands.Ignores
         public async Task Remove(string blocktype, ITextChannel channel)
         {
             var type = BlockModule.ParseBlockType(blocktype.ToLower());
-            var ignores = await _database.GetChannelIgnoresAsync(Context.Guild.Id, type);
+            var ignores = await _database.GetChannelIgnoresAsync(Context.Guild.Id);
             var channelIgnores = ignores.GetIgnoreType(IgnoreType.Channel);
 
             var first = channelIgnores.FirstOrDefault(ignore => ignore.IgnoredId == channel.Id);
@@ -244,12 +244,6 @@ namespace NoAdsHere.Commands.Ignores
                 case IgnoreType.Role:
                     var role = context.Guild.GetRole(ignoreId);
                     return role != null;
-
-                case IgnoreType.All:
-                    var auser = await context.Guild.GetUserAsync(ignoreId);
-                    var achannel = await context.Guild.GetChannelAsync(ignoreId);
-                    var arole = context.Guild.GetRole(ignoreId);
-                    return auser != null || achannel != null || arole != null;
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(ignoreType), ignoreType, null);

@@ -3,61 +3,61 @@ using NoAdsHere.Common;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.Global;
 using NoAdsHere.Database.Models.Guild;
-using NoAdsHere.Database.Models.GuildSettings;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using NoAdsHere.Database.Models.FAQ;
 
 namespace NoAdsHere.Services.Database
 {
     public class DatabaseService
     {
-        protected static IMongoDatabase _db { get; set; }
+        protected static IMongoDatabase Db { get; private set; }
 
-        public DatabaseService()
+        protected DatabaseService()
         {
         }
 
         public DatabaseService(IMongoClient mongo, string dbName)
         {
-            _db = mongo.GetDatabase(dbName);
+            Db = mongo.GetDatabase(dbName);
         }
 
         internal void LoadDatabase(IMongoClient mongo, string dbName)
         {
-            _db = mongo.GetDatabase(dbName);
+            Db = mongo.GetDatabase(dbName);
         }
 
         internal IMongoCollection<T> GetCollection<T>()
-            => _db.GetCollection<T>();
+            => Db.GetCollection<T>();
 
         internal async Task InsertOneAsync<T>(T entity)
         {
-            await _db.GetCollection<T>().InsertOneAsync(entity);
+            await Db.GetCollection<T>().InsertOneAsync(entity);
         }
 
         internal async Task InsertManyAsync<T>(IEnumerable<T> entities)
         {
-            await _db.GetCollection<T>().InsertManyAsync(entities);
+            await Db.GetCollection<T>().InsertManyAsync(entities);
         }
 
         internal async Task<Master> GetMasterAsync(ulong userId)
         {
-            var collection = _db.GetCollection<Master>();
+            var collection = Db.GetCollection<Master>();
             var cursor = await collection.FindAsync(filter => filter.UserId == userId);
             return await cursor.SingleOrDefaultAsync();
         }
 
         internal async Task<List<Master>> GetMastersAsync()
         {
-            var collection = _db.GetCollection<Master>();
+            var collection = Db.GetCollection<Master>();
             var cursor = await collection.FindAsync(filter => true);
             return await cursor.ToListAsync();
         }
 
         internal async Task<Statistics> GetStatisticsAsync(ulong guildId)
         {
-            var collection = _db.GetCollection<Statistics>();
+            var collection = Db.GetCollection<Statistics>();
             var cursor = await collection.FindAsync(filter => filter.GuildId == guildId);
             var result = await cursor.SingleOrDefaultAsync();
 
@@ -71,7 +71,7 @@ namespace NoAdsHere.Services.Database
 
         internal async Task<Statistics> GetStatisticsAsync()
         {
-            var collection = _db.GetCollection<Statistics>();
+            var collection = Db.GetCollection<Statistics>();
             var cursor = await collection.FindAsync(filter => true);
             var result = await cursor.ToListAsync();
 
@@ -86,7 +86,7 @@ namespace NoAdsHere.Services.Database
 
         internal async Task<Block> GetBlockAsync(ulong guildId, BlockType blockType, bool createNew = true)
         {
-            var collection = _db.GetCollection<Block>();
+            var collection = Db.GetCollection<Block>();
             var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.BlockType == blockType);
             var result = await cursor.SingleOrDefaultAsync();
 
@@ -100,56 +100,49 @@ namespace NoAdsHere.Services.Database
 
         internal async Task<List<Block>> GetBlocksAsync(ulong guildId)
         {
-            var collection = _db.GetCollection<Block>();
+            var collection = Db.GetCollection<Block>();
             var cursor = await collection.FindAsync(filter => filter.GuildId == guildId);
             return await cursor.ToListAsync();
         }
 
-        internal async Task<List<Ignore>> GetIgnoresAsync(ulong guildId, BlockType blockType)
+        internal async Task<List<Ignore>> GetUserIgnoresAsync(ulong guildId)
         {
-            var collection = _db.GetCollection<Ignore>();
-            var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && (filter.BlockType == blockType || filter.BlockType == BlockType.All));
+            var collection = Db.GetCollection<Ignore>();
+            var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.IgnoreType == IgnoreType.User);
             return await cursor.ToListAsync();
         }
 
-        internal async Task<List<Ignore>> GetUserIgnoresAsync(ulong guildId, BlockType blockType)
+        internal async Task<List<Ignore>> GetRoleIgnoresAsync(ulong guildId)
         {
-            var collection = _db.GetCollection<Ignore>();
-            var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.IgnoreType == IgnoreType.User && (filter.BlockType == blockType || filter.BlockType == BlockType.All));
+            var collection = Db.GetCollection<Ignore>();
+            var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.IgnoreType == IgnoreType.Role);
             return await cursor.ToListAsync();
         }
 
-        internal async Task<List<Ignore>> GetRoleIgnoresAsync(ulong guildId, BlockType blockType)
+        internal async Task<List<Ignore>> GetChannelIgnoresAsync(ulong guildId)
         {
-            var collection = _db.GetCollection<Ignore>();
-            var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.IgnoreType == IgnoreType.Role && (filter.BlockType == blockType || filter.BlockType == BlockType.All));
-            return await cursor.ToListAsync();
-        }
-
-        internal async Task<List<Ignore>> GetChannelIgnoresAsync(ulong guildId, BlockType blockType)
-        {
-            var collection = _db.GetCollection<Ignore>();
-            var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.IgnoreType == IgnoreType.Channel && (filter.BlockType == blockType || filter.BlockType == BlockType.All));
+            var collection = Db.GetCollection<Ignore>();
+            var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.IgnoreType == IgnoreType.Channel);
             return await cursor.ToListAsync();
         }
 
         internal async Task<Penalty> GetPenaltyAsync(ulong guildId, int penaltyId)
         {
-            var collection = _db.GetCollection<Penalty>();
+            var collection = Db.GetCollection<Penalty>();
             var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.PenaltyId == penaltyId);
             return await cursor.SingleOrDefaultAsync();
         }
 
         internal async Task<List<Penalty>> GetPenaltiesAsync(ulong guildId)
         {
-            var collection = _db.GetCollection<Penalty>();
+            var collection = Db.GetCollection<Penalty>();
             var cursor = await collection.FindAsync(filter => filter.GuildId == guildId);
             return await cursor.ToListAsync();
         }
 
         internal async Task<Violator> GetViolatorAsync(ulong guildId, ulong userId)
         {
-            var collection = _db.GetCollection<Violator>();
+            var collection = Db.GetCollection<Violator>();
             var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.UserId == userId);
             var result = await cursor.SingleOrDefaultAsync();
 
@@ -163,15 +156,43 @@ namespace NoAdsHere.Services.Database
 
         internal async Task<List<Violator>> GetViolatorsAsync(ulong guildId)
         {
-            var collection = _db.GetCollection<Violator>();
+            var collection = Db.GetCollection<Violator>();
             var cursor = await collection.FindAsync(filter => filter.GuildId == guildId);
             return await cursor.ToListAsync();
         }
 
         internal async Task<List<AllowString>> GetIgnoreStringsAsync(ulong guildId)
         {
-            var collection = _db.GetCollection<AllowString>();
+            var collection = Db.GetCollection<AllowString>();
             var cursor = await collection.FindAsync(filter => filter.GuildId == guildId);
+            return await cursor.ToListAsync();
+        }
+
+        public async Task<GuildFaqEntry> GetGuildFaqAsync(ulong guildId, string faq)
+        {
+            var collection = Db.GetCollection<GuildFaqEntry>();
+            var cursor = await collection.FindAsync(filter => filter.GuildId == guildId && filter.Name == faq.ToLower());
+            return await cursor.SingleOrDefaultAsync();
+        }
+
+        public async Task<List<GuildFaqEntry>> GetGuildFaqsAsync(ulong guildId)
+        {
+            var collection = Db.GetCollection<GuildFaqEntry>();
+            var cursor = await collection.FindAsync(filter => filter.GuildId == guildId);
+            return await cursor.ToListAsync();
+        }
+
+        public async Task<GlobalFaqEntry> GetGlobalFaqAsync(string faq)
+        {
+            var collection = Db.GetCollection<GlobalFaqEntry>();
+            var cursor = await collection.FindAsync(filter => filter.Name == faq.ToLower());
+            return await cursor.SingleOrDefaultAsync();
+        }
+
+        public async Task<List<GlobalFaqEntry>> GetGlobalFaqsAsync()
+        {
+            var collection = Db.GetCollection<GlobalFaqEntry>();
+            var cursor = await collection.FindAsync("{}");
             return await cursor.ToListAsync();
         }
     }

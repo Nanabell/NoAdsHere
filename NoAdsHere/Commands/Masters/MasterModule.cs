@@ -4,7 +4,7 @@ using MongoDB.Driver;
 using NoAdsHere.Commands.Penalties;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.Models.GuildSettings;
+using NoAdsHere.Database.Models.Guild;
 using NoAdsHere.Services.Database;
 
 namespace NoAdsHere.Commands.Masters

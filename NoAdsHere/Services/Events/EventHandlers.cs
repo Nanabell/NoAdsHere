@@ -7,7 +7,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using NoAdsHere.Common;
-using NoAdsHere.Database.Models.GuildSettings;
+using NoAdsHere.Database.Models.Guild;
 using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.FAQ;
 using NoAdsHere.Services.LogService;
