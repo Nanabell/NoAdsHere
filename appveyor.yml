@@ -8,8 +8,8 @@ environment:
   # Don't report back to the mothership
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
 before_build:
-  - appveyor-retry dotnet restore NoAdsHere\NoAdsHere.csproj --configfile Nuget/Nuget.Config
-  - appveyor-retry dotnet restore UnitTests\UnitTests.csproj --configfile Nuget/Nuget.Config
+  - appveyor-retry dotnet restore NoAdsHere\NoAdsHere.csproj --configfile ..\Nuget/Nuget.Config
+  - appveyor-retry dotnet restore UnitTests\UnitTests.csproj --configfile ..\Nuget/Nuget.Config
 build_script:
   - dotnet build "NoAdsHere\NoAdsHere.csproj" -c Release --no-dependencies
   - dotnet build "UnitTests\UnitTests.csproj" -c Release --no-dependencies
