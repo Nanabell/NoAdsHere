@@ -1,0 +1,22 @@
+version: '1.0.{build}'
+image: Visual Studio 2017
+configuration:
+#  - Debug
+  - Release
+platform: Any CPU
+hosts:
+  api.nuget.org: 93.184.221.200
+environment:
+  # Don't report back to the mothership
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+services:
+  - mongodb
+init:
+  - ps: $Env:BUILD = "$($Env:APPVEYOR_BUILD_NUMBER.PadLeft(5, "0"))"
+before_build:
+  - appveyor-retry dotnet restore NoAdsHere.sln --configfile Nuget/Nuget.Config
+build_script:
+  - dotnet build "NoAdsHere\NoAdsHere.csproj" -c %CONFIGURATION% --no-dependencies
+  - dotnet build "UnitTests\UnitTests.csproj" -c %CONFIGURATION% --no-dependencies
+test_script:
+  - ps: dotnet test UnitTests\UnitTests.csproj -c Release --no-build #--logger Appveyor

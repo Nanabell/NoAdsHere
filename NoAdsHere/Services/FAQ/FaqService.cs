@@ -69,7 +69,7 @@ namespace NoAdsHere.Services.FAQ
             if (name == null)
             {
                 var globals = await _faqSystem.GetGlobalEntriesAsync();
-                var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild);
+                var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild.Id);
                 var response = "**Frequently Asked Questions:**";
 
                 if (globals.Any() || locals.Any())
@@ -95,7 +95,7 @@ namespace NoAdsHere.Services.FAQ
             else
             {
                 var gEntry = await _faqSystem.GetGlobalFaqEntryAsync(name);
-                var lEntry = await _faqSystem.GetGuildFaqEntryAsync(Context.Guild, name);
+                var lEntry = await _faqSystem.GetGuildFaqEntryAsync(Context.Guild.Id, name);
 
                 if (gEntry != null)
                 {
@@ -114,12 +114,12 @@ namespace NoAdsHere.Services.FAQ
                 else
                 {
                     var globals = await _faqSystem.GetGlobalEntriesAsync();
-                    var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild);
+                    var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild.Id);
 
                     if (globals.Any() || locals.Any())
                     {
                         var gSimilar = await _faqSystem.GetSimilarGlobalEntries(name);
-                        var lSimilar = await _faqSystem.GetSimilarGuildEntries(Context.Guild, name);
+                        var lSimilar = await _faqSystem.GetSimilarGuildEntries(Context.Guild.Id, name);
 
                         if (gSimilar.Any() || lSimilar.Any())
                         {
