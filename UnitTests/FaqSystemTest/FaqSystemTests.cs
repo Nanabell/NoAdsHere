@@ -12,7 +12,6 @@ namespace UnitTests.FaqSystemTest
     {
         private FaqSystem _faqSystem;
         private MongoClient _mongo;
-        private ulong TestChannel => 336769094902611968;
         private static ulong TestGuild => 173334405438242816;
         private static ulong TestUser => 206813496585748480;
 
