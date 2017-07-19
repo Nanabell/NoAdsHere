@@ -31,12 +31,8 @@ namespace UnitTests.AntiAds
         {
             var ready = false;
             var client = new DiscordSocketClient();
-            string token;
-#if APPVEYOR
-            token = Environment.GetEnvironmentVariable("BOT_TOKEN");
-#else
-            token = Config.Load().Token;
-#endif
+            var vars = Environment.GetEnvironmentVariables();
+            var token = vars.Contains("APPVEYOR") ? Environment.GetEnvironmentVariable("BOT_TOKEN") : Config.Load().Token;
             await client.LoginAsync(TokenType.Bot, token);
             await client.StartAsync();
 
