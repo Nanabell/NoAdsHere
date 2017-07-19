@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
@@ -10,6 +11,7 @@ using NoAdsHere.Common;
 using NoAdsHere.Database;
 using NoAdsHere.Database.Models.Global;
 using NoAdsHere.Database.Models.Guild;
+using NoAdsHere.Services.Configuration;
 using NoAdsHere.Services.Database;
 using NUnit.Framework;
 
@@ -25,8 +27,19 @@ namespace UnitTests.AntiAds
         private static ulong TestUser => 206813496585748480;
 
         [OneTimeSetUp]
-        public void Init()
+        public async Task Init()
         {
+            var ready = false;
+            var client = new DiscordSocketClient();
+            string token;
+#if APPVEYOR
+            token = Environment.GetEnvironmentVariable("BOT_TOKEN");
+#else
+            token = Config.Load().Token;
+#endif
+            await client.LoginAsync(TokenType.Bot, token);
+            await client.StartAsync();
+
             _mongo = new MongoClient();
             _provider = new ServiceCollection()
                 .AddSingleton(new DatabaseService(_mongo, "Test"))
@@ -38,6 +51,17 @@ namespace UnitTests.AntiAds
                 new EnumRepresentationConvention(BsonType.String)
             };
             ConventionRegistry.Register("EnumStringConvention", pack, t => true);
+
+            client.Ready += () =>
+            {
+                ready = true;
+                return Task.CompletedTask;
+            };
+
+            while (!ready)
+            {
+                await Task.Delay(25);
+            }
         }
 
         [Test]
