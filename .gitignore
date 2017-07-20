@@ -263,5 +263,5 @@ __pycache__/
 # Custom
 config.json
 NLog.CONFIG
-./database
-./logs
+database/*
+logs/*
