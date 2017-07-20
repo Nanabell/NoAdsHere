@@ -1,5 +1,7 @@
 # NoAdsHere
-[![Build status](https://ci.appveyor.com/api/projects/status/rx28k1h5woodviu2?svg=true)](https://ci.appveyor.com/project/Nanabell/noadshere) [![Build status](https://ci.appveyor.com/api/projects/status/rx28k1h5woodviu2/branch/master?svg=true)](https://ci.appveyor.com/project/Nanabell/noadshere/branch/master)
+[![Build status (Latest)](https://img.shields.io/appveyor/ci/Nanabell/noadshere.svg?label=Latest)](https://ci.appveyor.com/project/Nanabell/noadshere) 
+[![Build status (Master)](https://img.shields.io/appveyor/ci/Nanabell/noadshere/master.svg?label=Master)](https://ci.appveyor.com/project/Nanabell/noadshere)
+
 
 NoAdsHere or NAH is a Discord bot that helps stop advertising in Discord servers. This project is still a Work-in-Progress. Contributions are welcome!
 
