@@ -82,7 +82,7 @@ namespace NoAdsHere
         {
             bool connected;
             _logger.Info("Attempting to connect to Docker Database");
-            var docker = new MongoClient("mongodb://database");
+            var docker = new MongoClient($"mongodb://{_config.Database.Username}:{_config.Database.Password}@database");
             var db = docker.GetDatabase("admin");
             connected = db.RunCommandAsync((Command<BsonDocument>)"{ping:1}").Wait(2000);
             if (connected)

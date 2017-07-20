@@ -7,13 +7,18 @@ services:
       context: ./NoAdsHere
       dockerfile: Dockerfile
     volumes: 
+      - ./NoAdsHere/NLog.config:/app/NLog.config
       - ./NoAdsHere/config.json:/app/config.json
+      - ./logs:/logs
     depends_on:
       - database
       
   database:
     image: mongo:latest
-    command: "--smallfiles"
-    volume_driver: db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=username
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - ./database:/data/db
     ports:
       - 27017:27017
