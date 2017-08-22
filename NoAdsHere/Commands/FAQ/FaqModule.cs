@@ -1,51 +1,70 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Addons.InteractiveCommands;
 using Discord.Commands;
+using Discord.WebSocket;
+using NLog;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Services.FAQ;
+using NoAdsHere.Database.Entities.Guild;
+using NoAdsHere.Database.UnitOfWork;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.FAQ
 {
     [Name("FAQ"), Group("FAQ")]
     public class FaqModule : ModuleBase
     {
-        private readonly InteractiveService _interactiveService;
-        private readonly FaqSystem _faqSystem;
+        private readonly DiscordShardedClient _client;
+        private InteractiveService _interactiveService;
+        private readonly IUnitOfWork _unit;
 
-        public FaqModule(FaqSystem faqSystem, InteractiveService interactiveService)
+        public FaqModule(IUnitOfWork unit, DiscordShardedClient client)
         {
-            _faqSystem = faqSystem;
-            _interactiveService = interactiveService;
+            _unit = unit;
+            _client = client;
         }
 
         [Command("Add", RunMode = RunMode.Async)]
         [RequirePermission(AccessLevel.HighModerator)]
         [Priority(1)]
-        public async Task Add([Remainder] string stuff = null)
+        public async Task Add([Remainder] string name = null)
         {
+            _interactiveService = new InteractiveService(_client.GetShardFor(Context.Guild));
+            var toDelete = new List<IMessage>();
             var header = await ReplyAsync("**FAQ Entry Setup:** *(reply with cancel to cancel at any time)*");
-
-            var msg = await ReplyAsync($"{Context.User.Mention} Please give a name for the new FAQ entry!");
-            var nameMessage = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30));
-            var name = nameMessage.Content;
-            if (name.ToLower() == "cancel")
+            IUserMessage msg = await ReplyAsync(".");
+            IUserMessage nameMessage = null;
+            if (name == null)
             {
-                await header.DeleteAsync();
-                await msg.DeleteAsync();
-                return;
+                msg = await ReplyAsync($"{Context.User.Mention} Please give a name for the new FAQ entry!");
+                nameMessage = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30));
+                name = nameMessage.Content;
+                if (name.ToLower() == "cancel")
+                {
+                    toDelete.Add(Context.Message);
+                    toDelete.Add(header);
+                    toDelete.Add(msg);
+                    toDelete.Add(nameMessage);
+                    await TryDeleteBatchAsync(Context.Channel, Context.User as IGuildUser, toDelete);
+                    return;
+                }
             }
 
             await msg.ModifyAsync(properties => properties.Content = $"{Context.User.Mention} Please reply with the whole Message for the FAQ response!");
-            var contentMessage = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30));
+            var contentMessage = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(90));
             var content = contentMessage.Content;
             if (content.ToLower() == "cancel")
             {
-                await header.DeleteAsync();
-                await msg.DeleteAsync();
+                toDelete.Add(Context.Message);
+                toDelete.Add(header);
+                toDelete.Add(msg);
+                if (nameMessage != null)
+                    toDelete.Add(nameMessage);
+                toDelete.Add(contentMessage);
+                await TryDeleteBatchAsync(Context.Channel, Context.User as IGuildUser, toDelete);
                 return;
             }
 
@@ -58,34 +77,68 @@ namespace NoAdsHere.Commands.FAQ
             var confirmMsg = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30));
             if (confirmMsg.Content.ToLower() == "yes")
             {
-                await _faqSystem.AddGuildEntryAsync(Context.Guild.Id, Context.User.Id, name.ToLower(), content);
-                await header.DeleteAsync();
-                await msg.ModifyAsync(p => p.Content = ":ok_hand:");
+                toDelete.Add(header);
+                if (nameMessage != null)
+                    toDelete.Add(nameMessage);
+                toDelete.Add(contentMessage);
+                toDelete.Add(confirmMsg);
+                await TryDeleteBatchAsync(Context.Channel, Context.User as IGuildUser, toDelete);
+
+                var faq = await _unit.Faqs.GetAsync(Context.Guild, name.ToLower());
+                if (faq == null)
+                {
+                    await _unit.Faqs.AddAsync(new Faq
+                    {
+                        GuildId = Context.Guild.Id,
+                        Name = name.ToLower(),
+                        Content = content,
+                        CreatorId = Context.User.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        LastUsed = DateTime.MinValue,
+                        UseCount = 0
+                    });
+                    _unit.SaveChanges();
+
+                    await msg.ModifyAsync(p => p.Content = ":ok_hand:");
+                }
+                else
+                {
+                    await msg.ModifyAsync(p => p.Content = $":exclamation: Faq entry with the name `{name}` already existing");
+                }
             }
             else
             {
-                await header.DeleteAsync();
-                await msg.DeleteAsync();
+                toDelete.Add(Context.Message);
+                toDelete.Add(header);
+                toDelete.Add(msg);
+                if (nameMessage != null)
+                    toDelete.Add(nameMessage);
+                toDelete.Add(contentMessage);
+                toDelete.Add(confirmMsg);
+                await TryDeleteBatchAsync(Context.Channel, Context.User as IGuildUser, toDelete);
             }
         }
 
         [Command("Remove", RunMode = RunMode.Async)]
         [RequirePermission(AccessLevel.HighModerator)]
         [Priority(1)]
-        public async Task Remove(string name)
+        public async Task Remove([Remainder] string name)
         {
-            var gEntry = await _faqSystem.GetGuildFaqEntryAsync(Context.Guild.Id, name.ToLower());
+            _interactiveService = new InteractiveService(_client.GetShardFor(Context.Guild));
+            var faq = await _unit.Faqs.GetAsync(Context.Guild, name.ToLower());
 
-            if (gEntry != null)
+            if (faq != null)
             {
                 var msg = await ReplyAsync(
-                    $"Please confirm removal of FAQ entry `{gEntry.Name}` *(yes to accept, annything else to cancel)*");
-                var responseMsg =
-                    await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30));
+                    $"Please confirm removal of FAQ entry `{faq.Name}` *(yes to accept, annything else to cancel)*");
+                var responseMsg = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30));
 
                 if (responseMsg.Content.ToLower() == "yes")
                 {
-                    await _faqSystem.RemoveGuildEntryAsync(gEntry);
+                    _unit.Faqs.Remove(faq);
+                    _unit.SaveChanges();
+
+                    await TryDeleteAsync(responseMsg);
                     await msg.ModifyAsync(p => p.Content = ":ok_hand:");
                 }
                 else
@@ -95,12 +148,35 @@ namespace NoAdsHere.Commands.FAQ
             }
             else
             {
-                var gSimilar = await _faqSystem.GetSimilarGuildEntries(Context.Guild.Id, name.ToLower());
-                if (gSimilar.Any())
-                    await ReplyAsync($"No FAQ Entry with the name `{name}` found. Did you mean:\n`" +
-                                   string.Join("`", gSimilar.Select(pair => pair.Key.Name)) + "`");
+                var similar = await _unit.Faqs.GetSimilarAsync(Context.Guild, name);
+                if (similar.Any())
+                    await ReplyAsync($"No FAQ Entry with the name `{name}` found. Did you mean:\n" + string.Join(" ", similar.Select(pair => "`" + pair.Key.Name + "`")));
                 else
                     await ReplyAsync($"No FAQ entry with the name {name} found.");
+            }
+        }
+
+        private static async Task TryDeleteAsync(IMessage message)
+        {
+            try
+            {
+                await message.DeleteAsync();
+            }
+            catch (Exception e)
+            {
+                LogManager.GetLogger("FAQ").Warn(e, $"Unable to delete message {message.Id} from {message.Author} in {(message.Author as IGuildUser)?.Guild}/{message.Channel}");
+            }
+        }
+
+        private static async Task TryDeleteBatchAsync(IMessageChannel channel, IGuildUser guildUser, IEnumerable<IMessage> messages)
+        {
+            try
+            {
+                await channel.DeleteMessagesAsync(messages);
+            }
+            catch (Exception e)
+            {
+                LogManager.GetLogger("FAQ").Warn(e, $"Unable to delete messages {string.Join(", ", messages.Select(message => message.Id))} from {guildUser} in {guildUser.Guild}/{channel}");
             }
         }
     }

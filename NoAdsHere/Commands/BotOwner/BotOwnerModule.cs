@@ -1,25 +1,26 @@
-using System;
-using System.Reflection;
-using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using NLog;
-using NoAdsHere.Database.Models.Global;
-using NoAdsHere.Services.Database;
+using NoAdsHere.Database.Entities.Global;
+using NoAdsHere.Database.UnitOfWork;
+using NoAdsHere.Services.Events;
+using System;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.BotOwner
 {
     [Name("Bot Owner")]
     public class BotOwnerModule : ModuleBase
     {
-        private readonly DatabaseService _database;
+        private readonly IUnitOfWork _unit;
 
-        public BotOwnerModule(DatabaseService database)
+        public BotOwnerModule(IUnitOfWork unit)
         {
-            _database = database;
+            _unit = unit;
         }
 
         [Command("Shutdown")]
@@ -36,7 +37,7 @@ namespace NoAdsHere.Commands.BotOwner
 
         private static async Task StopAsync(DiscordShardedClient client)
         {
-            await CommandHandler.StopHandler();
+            await EventHandlers.StopCommandHandlerAsync();
 
             await client.LogoutAsync();
             await client.StopAsync();
@@ -49,13 +50,16 @@ namespace NoAdsHere.Commands.BotOwner
         [RequireOwner]
         public async Task Add_Master(IUser user)
         {
-            var newMaster = new Master(user.Id);
-            try
+            var master = await _unit.Masters.GetAsync(user);
+
+            if (master == null)
             {
-                await newMaster.InsertAsync();
+                master = new Master() { UserId = user.Id };
+                await _unit.Masters.AddAsync(master);
+                _unit.SaveChanges();
                 await ReplyAsync($"{user} added to global Masters!");
             }
-            catch
+            else
             {
                 await ReplyAsync($"{user} is already a Master.");
             }
@@ -65,11 +69,12 @@ namespace NoAdsHere.Commands.BotOwner
         [RequireOwner]
         public async Task Remove_Master(IUser user)
         {
-            var master = await _database.GetMasterAsync(user.Id);
+            var master = await _unit.Masters.GetAsync(user);
 
             if (master != null)
             {
-                await master.DeleteAsync();
+                _unit.Masters.Remove(master);
+                _unit.SaveChanges();
                 await ReplyAsync($"{user} removed from global Masters!");
             }
             else
@@ -83,7 +88,7 @@ namespace NoAdsHere.Commands.BotOwner
         public async Task Eval([Remainder] string code)
         {
             string cs;
-            if (code.StartsWith("```"))
+            if (code.StartsWith("```", StringComparison.Ordinal))
             {
                 var cs1 = code.IndexOf("```", StringComparison.Ordinal) + 3;
                 cs1 = code.IndexOf('\n', cs1) + 1;
@@ -102,7 +107,7 @@ namespace NoAdsHere.Commands.BotOwner
                     Context = Context,
                     Message = Context.Message as SocketUserMessage,
                     Client = Context.Client as DiscordShardedClient,
-                    Database = _database
+                    Unit = _unit
                 };
 
                 var sopts = ScriptOptions.Default;
@@ -135,7 +140,7 @@ namespace NoAdsHere.Commands.BotOwner
             public SocketGuild Guild => Channel.Guild;
             public SocketUser User => Message.Author;
             public DiscordShardedClient Client { get; set; }
-            public DatabaseService Database { get; set; }
+            public IUnitOfWork Unit { get; set; }
         }
 
         private Task<IUserMessage> SendEmbedAsync(EmbedBuilder embed, IUserMessage nmsg)

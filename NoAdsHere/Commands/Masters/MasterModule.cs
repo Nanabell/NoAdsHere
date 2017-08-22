@@ -1,22 +1,20 @@
-using System.Threading.Tasks;
 using Discord.Commands;
-using MongoDB.Driver;
 using NoAdsHere.Commands.Penalties;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.Models.Guild;
-using NoAdsHere.Services.Database;
+using NoAdsHere.Database.UnitOfWork;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Masters
 {
     [Name("Master")]
     public class MasterModule : ModuleBase
     {
-        private readonly DatabaseService _database;
+        private readonly IUnitOfWork _unit;
 
-        public MasterModule(DatabaseService database)
+        public MasterModule(IUnitOfWork unit)
         {
-            _database = database;
+            _unit = unit;
         }
 
         [Command("Reset Guild")]
@@ -26,9 +24,13 @@ namespace NoAdsHere.Commands.Masters
             var guild = await Context.Client.GetGuildAsync(guildId);
             if (guild != null)
             {
-                await _database.GetCollection<Penalty>().DeleteManyAsync(f => f.GuildId == guildId);
-                await PenaltyModule.Restore(_database, Context.Client, guild);
+                await _unit.Penalties.GetAllAsync(Context.Guild);
+                await PenaltyModule.Restore(_unit, guild);
                 await ReplyAsync($"Guild {guild} has been reset to default penalties");
+            }
+            else
+            {
+                await ReplyAsync($"Guild with the ID `{guildId}` not found!");
             }
         }
     }

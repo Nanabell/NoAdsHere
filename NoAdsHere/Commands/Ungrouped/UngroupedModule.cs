@@ -1,25 +1,26 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Configuration;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Services.Configuration;
+using NoAdsHere.Database.UnitOfWork;
 using NoAdsHere.Services.Violations;
-using NoAdsHere.Services.Database;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Ungrouped
 {
     [Name("Not Grouped")]
     public class UngroupedModule : ModuleBase
     {
-        private readonly DatabaseService _database;
-        private readonly Config _config;
+        private readonly IConfigurationRoot _config;
+        private readonly IUnitOfWork _unit;
 
-        public UngroupedModule(DatabaseService database, Config config)
+        public UngroupedModule(IConfigurationRoot config, IUnitOfWork unit)
         {
-            _database = database;
             _config = config;
+            _unit = unit;
         }
 
         [Command("Github")]
@@ -42,16 +43,17 @@ namespace NoAdsHere.Commands.Ungrouped
         [RequirePermission(AccessLevel.User)]
         public async Task My_Points()
         {
-            var violator = await _database.GetViolatorAsync(Context.Guild.Id, Context.User.Id);
-            var penalties = await _database.GetPenaltiesAsync(Context.Guild.Id);
+            var violator = await _unit.Violators.GetOrCreateAsync(Context.User as IGuildUser);
+            var penalties = await _unit.Penalties.GetAllAsync(Context.Guild);
 
-            violator = await Violations.TryDecreasePoints(Context, violator);
+            violator = Violations.DecreasePoints(Context, violator);
+            _unit.SaveChanges();
 
             var nextPenalty = penalties.OrderBy(p => p.RequiredPoints).FirstOrDefault(penalty => penalty.RequiredPoints > violator.Points);
 
             var until = TimeSpan.Zero;
             if (violator.Points > 0)
-                until = violator.LatestViolation.AddHours(_config.PointDecreaseHours) - DateTime.UtcNow;
+                until = violator.LatestViolation.AddHours(Convert.ToDouble(_config["PointDecreaseHours"])) - DateTime.UtcNow;
             await ReplyAsync(
                 // ReSharper disable once UseFormatSpecifierInInterpolation
                 $"You currently have {violator.Points} points. {(until != TimeSpan.Zero ? $"You will lose one point in {until.ToString(@"hh'h'\:mm'm'\:ss's'")}" : "")}" +

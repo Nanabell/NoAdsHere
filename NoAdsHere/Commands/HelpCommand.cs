@@ -1,13 +1,12 @@
-﻿using System;
+﻿using Discord.Commands;
+using Microsoft.Extensions.Configuration;
+using NoAdsHere.Common;
+using NoAdsHere.Common.Preconditions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Discord.Commands;
-using Microsoft.Extensions.DependencyInjection;
-using NoAdsHere.Common;
-using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Services.Configuration;
 
 namespace NoAdsHere.Commands
 {
@@ -16,12 +15,12 @@ namespace NoAdsHere.Commands
     {
         private readonly CommandService _service;
         private readonly IServiceProvider _provider;
-        private readonly Config _config;
+        private readonly IConfigurationRoot _config;
 
-        public HelpCommand(CommandService service, IServiceProvider provider)
+        public HelpCommand(IServiceProvider provider, CommandService service, IConfigurationRoot config)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
-            _config = provider.GetService<Config>();
+            _config = config;
             _provider = provider;
         }
 
@@ -46,7 +45,7 @@ namespace NoAdsHere.Commands
                 sb.AppendLine($"**{group.Key}**: {string.Join(" ", commands.Distinct())}");
             }
             sb.AppendLine(
-                $"\nTo use commands do `{_config.Prefix.First()}<group> <command>`.");
+                $"\nTo use commands do `{_config["Prefixes:Main"]} <group> <command>`.");
 
             await ReplyAsync($"{sb}");
         }
@@ -73,7 +72,7 @@ namespace NoAdsHere.Commands
                 {
                     sb.AppendLine("Usage");
                     sb.AppendLine(
-                        $"\t{_config.Prefix.First()}{(command.Module.IsSubmodule ? $"{command.Module.Name} " : "")}{command.Name} " +
+                        $"\t{_config["Prefixes:Main"]} {(command.Module.IsSubmodule ? $"{command.Module.Name} " : "")}{command.Name} " +
                         string.Join(" ", command.Parameters.Select(FormatParam)).Replace("`", ""));
                     sb.AppendLine("Summary");
                     sb.AppendLine($"\t{command.Summary ?? "No Summary"}");
