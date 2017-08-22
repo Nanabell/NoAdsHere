@@ -1,22 +1,20 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord.WebSocket;
-using Discord;
-using NLog;
-using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
+﻿using Discord;
 using Discord.Commands;
-using NoAdsHere.Services.Configuration;
-using Discord.Addons.InteractiveCommands;
+using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Yaml;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
+using NoAdsHere.Database;
+using NoAdsHere.Database.UnitOfWork;
 using NoAdsHere.Services.Events;
-using NoAdsHere.Services.FAQ;
 using NoAdsHere.Services.LogService;
 using Quartz;
 using Quartz.Impl;
-using MongoDB.Bson.Serialization.Conventions;
-using MongoDB.Bson;
-using NoAdsHere.Services.Database;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace NoAdsHere
 {
@@ -26,51 +24,33 @@ namespace NoAdsHere
             new Program().RunAsync().GetAwaiter().GetResult();
 
         private DiscordShardedClient _client;
-        private Config _config;
-        private MongoClient _mongo;
-        private DatabaseService _database;
-        private readonly Logger _logger = LogManager.GetLogger("Core");
-        private IScheduler _scheduler;
+        private IConfigurationRoot _config;
+        private NoAdsHereContext _context;
+        private ILogger _logger;
 
-        public async Task RunAsync()
+        private async Task RunAsync()
         {
-            _config = Config.Load();
+            _context = new NoAdsHereContext();
+            await _context.Database.EnsureCreatedAsync();
 
-            _logger.Info($"Creating Discord Sharded Client with {_config.TotalShards} Shards");
-            _client = new DiscordShardedClient(new DiscordSocketConfig
-            {
-                AlwaysDownloadUsers = true,
-                TotalShards = _config.TotalShards,
-                MessageCacheSize = 10,
-#if DEBUG
-                LogLevel = LogSeverity.Debug,
-#else
-                LogLevel = LogSeverity.Verbose,
-#endif
-            });
+            _config = BuildConfiguration();
+            var provider = ConfigureServices(_config);
 
-            await EventHandlers.StartHandlers(_client);
+            _logger = provider.GetService<ILoggerFactory>().CreateLogger<Program>();
+            _client = provider.GetService<DiscordShardedClient>();
+            _config = provider.GetService<IConfigurationRoot>();
 
-            _logger.Info("Creating MongoClient");
-            _mongo = CreateDatabaseConnection();
-            _logger.Info("Adding Enum String Convention to ConventionRegistry");
-            LoadConventionPack();
+            _logger.LogInformation(new EventId(100, "starting..."), $"Starting client with {_config["Shards"]} shard/s");
 
-            _logger.Info("Starting DatabaseService");
-            _database = ConfigureDatabaseService();
-
-            _scheduler = await StartQuartz().ConfigureAwait(false);
-
-            var provider = ConfigureServices();
             await EventHandlers.StartServiceHandlers(provider);
 
-            await _client.LoginAsync(TokenType.Bot, _config.Token);
+            await _client.LoginAsync(TokenType.Bot, _config["Token"]);
             await _client.StartAsync();
 
             await Task.Delay(-1);
         }
 
-        private static async Task<IScheduler> StartQuartz()
+        private static async Task<IScheduler> GetTaskScheduler()
         {
             var factory = new StdSchedulerFactory();
             var scheduler = await factory.GetScheduler();
@@ -78,51 +58,55 @@ namespace NoAdsHere
             return scheduler;
         }
 
-        private MongoClient CreateDatabaseConnection()
+        private IServiceProvider ConfigureServices(IConfigurationRoot config)
         {
-            bool connected;
-            _logger.Info("Attempting to connect to Docker Database");
-            var docker = new MongoClient($"mongodb://{_config.Database.Username}:{_config.Database.Password}@database");
-            var db = docker.GetDatabase("admin");
-            connected = db.RunCommandAsync((Command<BsonDocument>)"{ping:1}").Wait(2000);
-            if (connected)
-            {
-                _logger.Info("Successfully conencted to docker database");
-                return docker;
-            }
-            _logger.Fatal("Failed to connect to docker database falling back to config database");
-            return new MongoClient(_config.Database.ConnectionString);
-        }
-
-        private void LoadConventionPack()
-        {
-            var pack = new ConventionPack
-            {
-                new EnumRepresentationConvention(BsonType.String)
-            };
-
-            ConventionRegistry.Register("EnumStringConvention", pack, t => true);
-        }
-
-        private DatabaseService ConfigureDatabaseService()
-            => new DatabaseService(_mongo, _config.Database.UseDb);
-
-        private IServiceProvider ConfigureServices()
-        {
-            _logger.Info("Configuring dependency injection and services...");
-            var servies = new ServiceCollection()
-                .AddSingleton(_client)
+            var provider = new ServiceCollection()
+                .AddLogging(builder => builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace))
+                .AddSingleton(new DiscordShardedClient(new DiscordSocketConfig
+                {
+                    LogLevel = LogSeverity.Debug,
+                    AlwaysDownloadUsers = true,
+                    MessageCacheSize = 10,
+                    TotalShards = Convert.ToInt32(config["Shards"])
+                }))
+                .AddSingleton(new CommandService(new CommandServiceConfig
+                {
+                    LogLevel = LogSeverity.Debug,
+                    ThrowOnError = true,
+                    DefaultRunMode = RunMode.Sync
+                }))
                 .AddSingleton(_config)
-                .AddSingleton(_mongo)
-                .AddSingleton(_database)
+                .AddSingleton(new NoAdsHereUnit(new NoAdsHereContext()) as IUnitOfWork)
                 .AddSingleton(new LogChannelService(_config))
-                .AddSingleton(_scheduler)
-                .AddSingleton(new FaqSystem(_database))
-                .AddSingleton(new InteractiveService(_client.Shards.First()))
-                .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false, LogLevel = LogSeverity.Verbose, DefaultRunMode = RunMode.Sync }));
+                .AddSingleton(GetTaskScheduler().GetAwaiter().GetResult())
+                //.AddSingleton(new InteractiveService(_client.Shards.First()))
+                .BuildServiceProvider();
 
-            var provider = servies.BuildServiceProvider();
+            ConfigureLogging(provider);
+
             return provider;
+        }
+
+        private void ConfigureLogging(IServiceProvider provider)
+        {
+            var factory = provider.GetService<ILoggerFactory>();
+            factory.AddNLog();
+            factory.ConfigureNLog("../../../NLog.config");
+        }
+
+        private static IConfigurationRoot BuildConfiguration()
+        {
+            try
+            {
+                return new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddYamlFile("config.yaml", false, true)
+                    .Build();
+            }
+            catch (FileNotFoundException)
+            {
+                throw new FileNotFoundException("Configuration File not found!");
+            }
         }
     }
 }
