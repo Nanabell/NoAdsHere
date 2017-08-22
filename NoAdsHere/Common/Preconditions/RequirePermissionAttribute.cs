@@ -1,10 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
-using NoAdsHere.Services.Database;
+using NoAdsHere.Database.UnitOfWork;
+using System;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Common.Preconditions
 {
@@ -19,12 +18,12 @@ namespace NoAdsHere.Common.Preconditions
 
         public override async Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            var level = await GetLevel(context, services.GetRequiredService<DatabaseService>()).ConfigureAwait(false);
+            var level = await GetLevel(context, services.GetRequiredService<IUnitOfWork>()).ConfigureAwait(false);
 
             return level >= _level ? PreconditionResult.FromSuccess() : PreconditionResult.FromError($"Insufficient permissions! Required level: {_level}");
         }
 
-        private static async Task<AccessLevel> GetLevel(ICommandContext context, DatabaseService database)
+        private static async Task<AccessLevel> GetLevel(ICommandContext context, IUnitOfWork unit)
         {
             if (context.User.IsBot)
                 return AccessLevel.Blocked;
@@ -33,8 +32,8 @@ namespace NoAdsHere.Common.Preconditions
             if (application.Owner.Id == context.User.Id)
                 return AccessLevel.God;
 
-            var masters = await database.GetMastersAsync();
-            if (masters.Any(master => master.UserId == context.User.Id))
+            var master = await unit.Masters.GetAsync(context.User);
+            if (master != null)
                 return AccessLevel.Master;
 
             if (!(context.User is IGuildUser guildUser)) return AccessLevel.Private;
