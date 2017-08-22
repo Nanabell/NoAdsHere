@@ -267,4 +267,3 @@ database/*
 logs/*
 *.yml
 !appveyor.yml
-!docker-compose - example.yml

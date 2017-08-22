@@ -33,9 +33,6 @@
     <PackageReference Include="Quartz" Version="3.0.0-alpha2" />
   </ItemGroup>
   <ItemGroup>
-    <None Update=".dockerignore">
-      <DependentUpon>Dockerfile</DependentUpon>
-    </None>
     <None Update="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
