@@ -2,9 +2,10 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using NLog;
+using Microsoft.Extensions.Logging;
 using NoAdsHere.Common;
-using NoAdsHere.Services.Database;
+using NoAdsHere.Database.Entities.Guild;
+using NoAdsHere.Database.UnitOfWork;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,9 +16,9 @@ namespace NoAdsHere.Services.AntiAds
 {
     public static class AntiAds
     {
-        private static readonly Logger Logger = LogManager.GetLogger("AntiAds");
         private static DiscordShardedClient _client;
-        private static DatabaseService _database;
+        private static IUnitOfWork _unit;
+        private static ILogger _logger;
 
         public static readonly Dictionary<ulong, List<BlockType>> ActiveBlocks = new Dictionary<ulong, List<BlockType>>(0);
 
@@ -35,18 +36,19 @@ namespace NoAdsHere.Services.AntiAds
 
         public static Task Install(IServiceProvider provider)
         {
-            _database = provider.GetRequiredService<DatabaseService>();
+            _unit = provider.GetRequiredService<IUnitOfWork>();
             _client = provider.GetRequiredService<DiscordShardedClient>();
+            _logger = provider.GetService<ILoggerFactory>().CreateLogger(typeof(AntiAds));
             return Task.CompletedTask;
         }
 
         public static Task StartAsync()
         {
-            Logger.Info("Hooking GuildAvailable event to Populate Active Blocks");
+            _logger.LogInformation(new EventId(100), "Hooking GuildAvailable event to Populate Active Blocks");
             _client.GuildAvailable += GuildLoader;
             _client.MessageReceived += AdsHandler;
             _client.MessageUpdated += MessageUpdateAntiAds;
-            Logger.Info("AntiAds service started.");
+            _logger.LogInformation(new EventId(200), "AntiAds service started.");
             return Task.CompletedTask;
         }
 
@@ -59,14 +61,14 @@ namespace NoAdsHere.Services.AntiAds
         {
             if (!ActiveBlocks.ContainsKey(socketGuild.Id))
             {
-                var blocks = await _database.GetBlocksAsync(socketGuild.Id);
+                var blocks = (await _unit.Blocks.GetAllAsync(socketGuild)).ToList();
                 ActiveBlocks.Add(socketGuild.Id, blocks.Select(block => block.BlockType).ToList());
-                Logger.Info($"Loaded Guild {socketGuild}'s({socketGuild.Id}) active blockings:\n- " +
+                _logger.LogInformation(new EventId(200), $"Loaded Guild {socketGuild}'s({socketGuild.Id}) active blockings:\n- " +
                             $"{string.Join("\n- ", blocks.Select(block => block.BlockType))}");
             }
             else
             {
-                Logger.Debug($"{socketGuild}({socketGuild.Id}) already loaded into Activeblocks");
+                _logger.LogDebug(new EventId(208), $"{socketGuild}({socketGuild.Id}) already loaded into Activeblocks");
             }
         }
 
@@ -76,7 +78,7 @@ namespace NoAdsHere.Services.AntiAds
             _client.GuildAvailable -= GuildLoader;
 
             ActiveBlocks.Clear();
-            Logger.Info("AntiAds service stopped.");
+            _logger.LogInformation(new EventId(200), "AntiAds service stopped.");
             return Task.CompletedTask;
         }
 
@@ -89,35 +91,35 @@ namespace NoAdsHere.Services.AntiAds
             var context = new CommandContext(_client, message);
             if (context.IsPrivate) return;
 
-            var _ = Task.Run(async () =>
-            {
-                var rawmsg = GetAsciiMessage(context.Message.Content);
+            await Task.Run(async () =>
+             {
+                 var rawmsg = GetAsciiMessage(context.Message.Content);
 
-                if (IsActive(context.Guild.Id, BlockType.InstantInvite))
-                    if (IsRegexMatch(InstantInvite, rawmsg))
-                        await TryDelete(context, BlockType.InstantInvite);
+                 if (IsActive(context.Guild, BlockType.InstantInvite))
+                     if (IsRegexMatch(InstantInvite, rawmsg))
+                         await TryDelete(context, BlockType.InstantInvite);
 
-                //TODO: Combine all 3 Twitch Regexes into one
-                if (IsActive(context.Guild.Id, BlockType.TwitchClip))
-                    if (IsRegexMatch(TwitchClip, rawmsg))
-                        await TryDelete(context, BlockType.TwitchClip);
+                 //TODO: Combine all 3 Twitch Regexes into one
+                 if (IsActive(context.Guild, BlockType.TwitchClip))
+                     if (IsRegexMatch(TwitchClip, rawmsg))
+                         await TryDelete(context, BlockType.TwitchClip);
 
-                if (IsActive(context.Guild.Id, BlockType.TwitchStream))
-                    if (IsRegexMatch(TwitchStream, rawmsg))
-                        await TryDelete(context, BlockType.TwitchStream);
+                 if (IsActive(context.Guild, BlockType.TwitchStream))
+                     if (IsRegexMatch(TwitchStream, rawmsg))
+                         await TryDelete(context, BlockType.TwitchStream);
 
-                if (IsActive(context.Guild.Id, BlockType.TwitchVideo))
-                    if (IsRegexMatch(TwitchVideo, rawmsg))
-                        await TryDelete(context, BlockType.TwitchVideo);
+                 if (IsActive(context.Guild, BlockType.TwitchVideo))
+                     if (IsRegexMatch(TwitchVideo, rawmsg))
+                         await TryDelete(context, BlockType.TwitchVideo);
 
-                if (IsActive(context.Guild.Id, BlockType.YoutubeLink))
-                    if (IsRegexMatch(YoutubeLink, rawmsg))
-                        await TryDelete(context, BlockType.YoutubeLink);
+                 if (IsActive(context.Guild, BlockType.YoutubeLink))
+                     if (IsRegexMatch(YoutubeLink, rawmsg))
+                         await TryDelete(context, BlockType.YoutubeLink);
 
-                if (IsActive(context.Guild.Id, BlockType.SteamScam))
-                    if (IsRegexMatch(SteamScam, rawmsg))
-                        await TryDelete(context, BlockType.SteamScam);
-            });
+                 if (IsActive(context.Guild, BlockType.SteamScam))
+                     if (IsRegexMatch(SteamScam, rawmsg))
+                         await TryDelete(context, BlockType.SteamScam);
+             });
             await Task.CompletedTask.ConfigureAwait(false);
         }
 
@@ -127,39 +129,59 @@ namespace NoAdsHere.Services.AntiAds
         public static bool IsRegexMatch(Regex regex, string input)
             => regex.IsMatch(input);
 
-        public static bool IsActive(ulong guildId, BlockType type)
-            => ActiveBlocks.ContainsKey(guildId) && ActiveBlocks[guildId].Contains(type);
+        public static bool IsActive(IGuild guild, BlockType type)
+            => ActiveBlocks.ContainsKey(guild.Id) && ActiveBlocks[guild.Id].Contains(type);
 
         private static async Task TryDelete(ICommandContext context, BlockType type)
         {
-            if (await IsToDelete(context.Channel as ITextChannel, context.User as IGuildUser, context.Message.Content).ConfigureAwait(false))
+            if (await IsToDelete(context.User as IGuildUser, context.Message.Content).ConfigureAwait(false))
             {
                 await DeleteMessage(context, type.ToString()).ConfigureAwait(false);
                 await Violations.Violations.Add(context, type).ConfigureAwait(false);
             }
         }
 
-        public static async Task<bool> IsToDelete(ITextChannel channel, IGuildUser user, string message)
+        public static async Task<bool> IsToDelete(IGuildUser user, string message)
         {
-            if (channel == null) return false;
-            if (user == null) return false;
-            if (string.IsNullOrEmpty(message)) return false;
+            if (user == null)
+                return false;
+            if (string.IsNullOrEmpty(message))
+                return false;
 
-            var masters = await _database.GetMastersAsync();
-            if (masters.Any(m => m.UserId == user.Id)) return false;
+            var master = await _unit.Masters.GetAsync(user);
+            if (master != null)
+                return false;
 
-            var channelIgnores = await _database.GetChannelIgnoresAsync(channel.GuildId);
-            if (channelIgnores.Any(c => c.IgnoredId == channel.Id)) return false;
+            var ignores = (await _unit.Ignores.GetAllAsync(user.Guild)).ToList();
 
-            var userIgnores = await _database.GetUserIgnoresAsync(channel.GuildId);
-            if (userIgnores.Any(u => u.IgnoredId == user.Id)) return false;
+            var userIgnores = ignores.Where(ignore => ignore.IgnoreType == IgnoreType.User);
+            var userIgnore = userIgnores.FirstOrDefault(ignore => ignore.IgnoredId == user.Id);
 
-            var roleIgnores = await _database.GetRoleIgnoresAsync(channel.GuildId);
-            if (user.RoleIds.Any(roleId => roleIgnores.Any(r => r.IgnoredId == roleId))) return false;
+            if (userIgnore != null)
+            {
+                if (!IsStringIgnore(userIgnore))
+                    return false;
+                return !CompareIgnoredString(userIgnore, message);
+            }
 
-            var aStrings = await _database.GetIgnoreStringsAsync(channel.GuildId);
-            return !aStrings.CheckAllowedStrings(channel, user, message);
+            var roleIgnores = ignores.Where(ignore => ignore.IgnoreType == IgnoreType.Role).ToList();
+            var roleIgnore = roleIgnores.FirstOrDefault(ignore =>
+                ignore.IgnoredId == user.RoleIds.FirstOrDefault(roleId =>
+                    roleIgnores.Any(r => r.IgnoredId == roleId)));
+
+            if (roleIgnore == null)
+                return true;
+            if (!IsStringIgnore(roleIgnore))
+                return false;
+
+            return !CompareIgnoredString(roleIgnore, message);
         }
+
+        public static bool IsStringIgnore(Ignore ignore)
+            => ignore.IgnoredString != null;
+
+        public static bool CompareIgnoredString(Ignore ignore, string message)
+            => ignore.IgnoredString.Equals(message, StringComparison.OrdinalIgnoreCase);
 
         private static async Task DeleteMessage(ICommandContext context, string reason)
         {
@@ -169,53 +191,56 @@ namespace NoAdsHere.Services.AntiAds
                 try
                 {
                     await context.Message.DeleteAsync();
-                    Logger.Info($"Deleted message {context.Message.Id} by {context.User} in {context.Guild}/{context.Channel}. Reason: {reason}.");
+                    _logger.LogInformation(new EventId(200), $"Deleted message {context.Message.Id} by {context.User} in {context.Guild}/{context.Channel}. Reason: {reason}.");
                 }
                 catch (Exception e)
                 {
-                    Logger.Warn(e, $"Failed to delete message {context.Message.Id} by {context.User} in {context.Guild}/{context.Channel}.");
+                    _logger.LogWarning(new EventId(403), e, $"Failed to delete message {context.Message.Id} by {context.User} in {context.Guild}/{context.Channel}.");
                 }
             }
         }
 
-        public static async Task<bool> TryEnableGuild(ulong guildId, BlockType type)
+        public static bool TryEnableGuild(IGuild guild, BlockType type)
         {
-            if (ActiveBlocks.ContainsKey(guildId))
+            if (ActiveBlocks.ContainsKey(guild.Id))
             {
-                if (ActiveBlocks[guildId].Contains(type))
+                if (ActiveBlocks[guild.Id].Contains(type))
                     return false;
-                ActiveBlocks[guildId].Add(type);
-                await UpdateDatabase(guildId, type, true);
-                Logger.Info($"Enabled blocktype {type} in guild {_client.GetGuild(guildId)}");
+                ActiveBlocks[guild.Id].Add(type);
+                UpdateDatabase(guild, type, true);
+                _logger.LogInformation(new EventId(200), $"Enabled blocktype {type} in guild {guild}");
                 return true;
             }
-            ActiveBlocks.Add(guildId, new List<BlockType>() { type });
+            ActiveBlocks.Add(guild.Id, new List<BlockType>() { type });
             return true;
         }
 
-        public static async Task<bool> TryDisableGuild(ulong guildId, BlockType type)
+        public static bool TryDisableGuild(IGuild guild, BlockType type)
         {
-            if (!ActiveBlocks.ContainsKey(guildId))
+            if (!ActiveBlocks.ContainsKey(guild.Id))
                 return true;
-            if (!ActiveBlocks[guildId].Contains(type))
+            if (!ActiveBlocks[guild.Id].Contains(type))
                 return false;
-            ActiveBlocks[guildId].Remove(type);
-            await UpdateDatabase(guildId, type, false);
-            Logger.Info($"Disabled blocktype {type} in guild {_client.GetGuild(guildId)}");
+            ActiveBlocks[guild.Id].Remove(type);
+            UpdateDatabase(guild, type, false);
+            _logger.LogInformation(new EventId(200), $"Disabled blocktype {type} in guild {guild}");
             return true;
         }
 
-        private static async Task UpdateDatabase(ulong guildId, BlockType type, bool isEnable)
+        private static void UpdateDatabase(IGuild guild, BlockType type, bool isEnable)
         {
             try
             {
-                var block = await _database.GetBlockAsync(guildId, type, isEnable);
+                var block = _unit.Blocks.Get(guild, type);
                 if (!isEnable && block != null)
-                    await block.DeleteAsync().ConfigureAwait(false);
+                    _unit.Blocks.Remove(block);
+                else
+                    _unit.Blocks.Add(new Block(guild, type));
+                _unit.SaveChanges();
             }
-            catch
+            catch (Exception ex)
             {
-                Logger.Warn($"Unable to save changes to Database");
+                _logger.LogWarning(new EventId(500), ex, $"Unable to save changes to Database");
             }
         }
     }

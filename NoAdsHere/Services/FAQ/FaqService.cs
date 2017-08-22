@@ -1,13 +1,16 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using NLog;
+using Microsoft.Extensions.Logging;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
+using NoAdsHere.Database.UnitOfWork;
+using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Services.FAQ
 {
@@ -16,13 +19,16 @@ namespace NoAdsHere.Services.FAQ
         private static DiscordShardedClient _client;
         private static CommandService _commandService;
         private static IServiceProvider _provider;
-        private static readonly Logger Logger = LogManager.GetLogger("FAQ");
+        private static IConfigurationRoot _config;
+        private static ILogger _logger;
 
         public static Task Install(IServiceProvider provider)
         {
             _provider = provider;
+            _config = provider.GetService<IConfigurationRoot>();
             _client = provider.GetService<DiscordShardedClient>();
             _commandService = new CommandService(new CommandServiceConfig { DefaultRunMode = RunMode.Async });
+            _logger = provider.GetService<ILoggerFactory>().CreateLogger(typeof(FaqService));
             return Task.CompletedTask;
         }
 
@@ -38,7 +44,7 @@ namespace NoAdsHere.Services.FAQ
             var message = socketMessage as SocketUserMessage;
             if (message == null)
                 return;
-            if (!message.HasStringPrefix("?fa", ref argPos))
+            if (!message.HasStringPrefix(_config["Prefixes:Faq"], ref argPos, StringComparison.OrdinalIgnoreCase))
                 return;
             var context = new ShardedCommandContext(_client, message);
             if (context.IsPrivate)
@@ -49,99 +55,73 @@ namespace NoAdsHere.Services.FAQ
             var result = await _commandService.ExecuteAsync(context, argPos, _provider);
 
             if (!result.IsSuccess)
-                Logger.Warn(result);
+                _logger.LogWarning(new EventId(515), result.ErrorReason);
         }
     }
 
+    [DontAutoLoad]
     internal class FaqCommands : ModuleBase
     {
-        private readonly FaqSystem _faqSystem;
+        private readonly IUnitOfWork _unit;
 
-        public FaqCommands(FaqSystem faqSystem)
+        public FaqCommands(IUnitOfWork unit)
         {
-            _faqSystem = faqSystem;
+            _unit = unit;
         }
 
-        [Command("q")]
+        [Command("faq"), Alias("faqs")]
         [RequirePermission(AccessLevel.User)]
         public async Task Faq([Remainder]string name = null)
         {
             if (name == null)
             {
-                var globals = await _faqSystem.GetGlobalEntriesAsync();
-                var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild.Id);
-                var response = "**Frequently Asked Questions:**";
+                var faqs = (await _unit.Faqs.GetAllAsync(Context.Guild)).ToList();
+                var sb = new StringBuilder();
+                sb.AppendLine("**Frequently Asked Questions:**");
 
-                if (globals.Any() || locals.Any())
+                if (faqs.Any())
                 {
-                    if (globals.Any())
-                    {
-                        response += "\n*Global FAQ's:*";
-                        response += "\n`" + string.Join("`", globals.Select(f => f.Name)) + "`";
-                        response += "\n";
-                    }
-                    if (locals.Any())
-                    {
-                        response += "\n*Guild FAQ's:*";
-                        response += "\n`" + string.Join("`", locals.Select(f => f.Name)) + "`";
-                    }
-                    await ReplyAsync(response);
+                    sb.AppendLine(string.Join(" ", faqs.Select(f => "`" + f.Name + "`")));
+                    await ReplyAsync(sb.ToString());
                 }
                 else
                 {
-                    await ReplyAsync("Currently no available FAQ's");
+                    await ReplyAsync("Currently no FAQ's available");
                 }
             }
             else
             {
-                var gEntry = await _faqSystem.GetGlobalFaqEntryAsync(name);
-                var lEntry = await _faqSystem.GetGuildFaqEntryAsync(Context.Guild.Id, name);
+                var faq = await _unit.Faqs.GetAsync(Context.Guild, name);
 
-                if (gEntry != null)
+                if (faq != null)
                 {
-                    await ReplyAsync(gEntry.Content);
-                    gEntry.LastUsed = DateTime.UtcNow;
-                    gEntry.UseCount++;
-                    await _faqSystem.SaveGlobalEntryAsync(gEntry);
-                }
-                else if (lEntry != null)
-                {
-                    await ReplyAsync(lEntry.Content);
-                    lEntry.LastUsed = DateTime.UtcNow;
-                    lEntry.UseCount++;
-                    await _faqSystem.SaveGuildEntryAsync(lEntry);
+                    await ReplyAsync(faq.Content);
+                    faq.LastUsed = DateTime.UtcNow;
+                    faq.UseCount++;
+                    _unit.SaveChanges();
                 }
                 else
                 {
-                    var globals = await _faqSystem.GetGlobalEntriesAsync();
-                    var locals = await _faqSystem.GetGuildEntriesAsync(Context.Guild.Id);
+                    var faqs = await _unit.Faqs.GetAllAsync(Context.Guild);
 
-                    if (globals.Any() || locals.Any())
+                    if (faqs.Any())
                     {
-                        var gSimilar = await _faqSystem.GetSimilarGlobalEntries(name);
-                        var lSimilar = await _faqSystem.GetSimilarGuildEntries(Context.Guild.Id, name);
+                        var similarFaqs = await _unit.Faqs.GetSimilarAsync(Context.Guild, name);
 
-                        if (gSimilar.Any() || lSimilar.Any())
+                        if (similarFaqs.Any())
                         {
-                            var response = $"No FAQ Entry with the name `{name}` found. Did you mean:";
+                            var sb = new StringBuilder();
+                            sb.AppendLine($"No FAQ Entry with the name `{name}` found. Did you mean:");
+                            if (similarFaqs.Any())
+                                sb.AppendLine(string.Join(" ", similarFaqs.Select(pair => "`" + pair.Key.Name + "`")));
 
-                            if (gSimilar.Any())
-                            {
-                                response += "\n*Global FAQ's:*";
-                                response += "\n`" + string.Join("`", gSimilar.Select(pair => pair.Key.Name)) + "`";
-                            }
-                            if (lSimilar.Any())
-                            {
-                                response += "\n*Guild FAQ's:*";
-                                response += "\n`" + string.Join("`", lSimilar.Select(pair => pair.Key.Name)) + "`";
-                            }
-                            await ReplyAsync(response);
+                            await ReplyAsync(sb.ToString());
                         }
                         else
                             await ReplyAsync($"No FAQ entry with the name {name} found.");
                     }
                     else
-                        await ReplyAsync($"No FAQ entry with the name {name} found.");
+                        await ReplyAsync($"No FAQ entries existing.");
                 }
             }
         }

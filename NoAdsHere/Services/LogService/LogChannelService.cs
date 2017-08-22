@@ -1,9 +1,10 @@
-﻿using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Webhook;
 using Discord.WebSocket;
-using NoAdsHere.Services.Configuration;
+using Microsoft.Extensions.Configuration;
 using NoAdsHere.Services.Events;
+using System;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Services.LogService
 {
@@ -12,13 +13,13 @@ namespace NoAdsHere.Services.LogService
         private bool IsEnabled;
         private readonly DiscordWebhookClient _client;
 
-        public LogChannelService(Config config)
+        public LogChannelService(IConfigurationRoot config)
         {
-            if (config.WebHookLogger.Token == null || config.WebHookLogger.Id == 0)
+            if (config["webhook:token"] == null || Convert.ToUInt64(config["webhook:id"]) == 0)
                 IsEnabled = false;
             else IsEnabled = true;
 
-            _client = new DiscordWebhookClient(config.WebHookLogger.Id, config.WebHookLogger.Token);
+            _client = new DiscordWebhookClient(Convert.ToUInt64(config["webhook:id"]), config["webhook:token"]);
             _client.Log += EventHandlers.WebhookLogger;
         }
 

@@ -1,9 +1,9 @@
-﻿using Quartz;
+﻿using Discord;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Quartz;
 using System;
 using System.Threading.Tasks;
-using Discord;
-using Microsoft.Extensions.DependencyInjection;
-using NLog;
 
 namespace NoAdsHere.Services.Penalties
 {
@@ -18,7 +18,7 @@ namespace NoAdsHere.Services.Penalties
             return Task.CompletedTask;
         }
 
-        public static async Task QueueTrigger(IUserMessage message)
+        public static async Task QueueTrigger(IUserMessage message, ILogger logger)
         {
             var job = JobBuilder.Create<DeleteMessageJob>()
                 .StoreDurably()
@@ -29,6 +29,7 @@ namespace NoAdsHere.Services.Penalties
                 .ForJob(job)
                 .Build();
             trigger.JobDataMap["message"] = message;
+            trigger.JobDataMap["logger"] = logger;
 
             await _scheduler.ScheduleJob(job, trigger);
         }
@@ -36,13 +37,12 @@ namespace NoAdsHere.Services.Penalties
 
     public class DeleteMessageJob : IJob
     {
-        private readonly Logger _logger = LogManager.GetLogger("AntiAds");
-
         public async Task Execute(IJobExecutionContext context)
         {
             var datamap = context.Trigger.JobDataMap;
 
             var message = (IUserMessage)datamap["message"];
+            var logger = (ILogger)datamap["logger"];
 
             try
             {
@@ -50,7 +50,7 @@ namespace NoAdsHere.Services.Penalties
             }
             catch (Exception e)
             {
-                _logger.Warn(e, $"Unable to delete message with ID: {message.Id}.");
+                logger.LogWarning(new EventId(400), e, $"Unable to delete message with ID: {message.Id}.");
             }
         }
     }
