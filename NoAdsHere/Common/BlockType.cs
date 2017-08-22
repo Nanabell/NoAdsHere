@@ -7,7 +7,6 @@ namespace NoAdsHere.Common
         SteamScam,
         TwitchStream,
         TwitchVideo,
-        TwitchClip,
-        All = 100
+        TwitchClip
     }
 }

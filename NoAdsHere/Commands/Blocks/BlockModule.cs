@@ -6,6 +6,8 @@ using NoAdsHere.Common.Preconditions;
 using NoAdsHere.Services.AntiAds;
 using NoAdsHere.Services.LogService;
 using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Blocks
@@ -22,37 +24,66 @@ namespace NoAdsHere.Commands.Blocks
             _client = client;
         }
 
+        [Command("Enable All")]
+        [RequirePermission(AccessLevel.HighModerator)]
+        [Priority(1)]
+        public async Task EnableAll()
+        {
+            var sb = new StringBuilder();
+            foreach (BlockType type in Enum.GetValues(typeof(BlockType)))
+            {
+                if (!AntiAds.TryEnableGuild(Context.Guild, type))
+                    sb.AppendLine($":exclamation: Failed to enable `{type}`. Already enabled!");
+                else
+                    sb.AppendLine($":white_check_mark: Enabled `{type}`.");
+            }
+            sb.AppendLine($"Please ensure that the bot has `MANAGE_MESSAGES` permission in the required channels");
+            await ReplyAsync(sb.ToString());
+            await _logChannelService.LogMessageAsync(_client, Context.Client, Emote.Parse("<:Action:333712615731888129>"),
+                    $"{Context.User} enabled All Blocks in {Context.Guild}").ConfigureAwait(false);
+        }
+
+        [Command("Disable All")]
+        [RequirePermission(AccessLevel.HighModerator)]
+        [Priority(1)]
+        public async Task DisableAll()
+        {
+            var sb = new StringBuilder();
+            foreach (BlockType type in Enum.GetValues(typeof(BlockType)))
+            {
+                if (!AntiAds.TryDisableGuild(Context.Guild, type))
+                    sb.AppendLine($":exclamation: Failed to disable `{type}`. Already disabled!");
+                else
+                    sb.AppendLine($":white_check_mark: Disabled `{type}`.");
+            }
+            await ReplyAsync(sb.ToString());
+            await _logChannelService.LogMessageAsync(_client, Context.Client, Emote.Parse("<:Action:333712615731888129>"),
+                    $"{Context.User} disabled All Blocks in {Context.Guild}").ConfigureAwait(false);
+        }
+
         [Command("Enable")]
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task Enable(string type)
         {
-            var success = false;
-            var blocktype = ParseBlockType(type.ToLower());
-
-            if (blocktype == BlockType.All)
+            try
             {
-                foreach (BlockType block in Enum.GetValues(typeof(BlockType)))
+                var blocktype = ParseBlockType(type.ToLower());
+                var success = AntiAds.TryEnableGuild(Context.Guild, blocktype);
+
+                if (success)
                 {
-                    if (block == BlockType.All)
-                        continue;
-                    success = await AntiAds.TryEnableGuild(Context.Guild.Id, block);
+                    await ReplyAsync($":white_check_mark: Now blocking {blocktype}. Please ensure that the bot has the `Manage Messages` permission in the required channels.");
+                    await _logChannelService.LogMessageAsync(_client, Context.Client, Emote.Parse("<:Action:333712615731888129>"),
+                        $"{Context.User} enabled {blocktype} in {Context.Guild}").ConfigureAwait(false);
+                }
+                else
+                {
+                    await ReplyAsync($":exclamation: {blocktype} is already enabled!");
                 }
             }
-            else
+            catch (KeyNotFoundException ex)
             {
-                success = await AntiAds.TryEnableGuild(Context.Guild.Id, blocktype);
-            }
-
-            if (success)
-            {
-                await ReplyAsync(
-                    $"Now blocking {blocktype}. Please ensure that the bot has the 'Manage Messages' permission in the required channels.");
-                await _logChannelService.LogMessageAsync(_client, Context.Client, Emote.Parse("<:Action:333712615731888129>"),
-                    $"{Context.User} enabled {blocktype} in {Context.Guild}").ConfigureAwait(false);
-            }
-            else
-            {
-                await ReplyAsync($"{blocktype} is already enabled!");
+                await ReplyAsync(ex.Message);
             }
         }
 
@@ -60,34 +91,26 @@ namespace NoAdsHere.Commands.Blocks
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task Disable(string type)
         {
-            var success = false;
-            var blocktype = ParseBlockType(type.ToLower());
-
-            if (blocktype == BlockType.All)
+            try
             {
-                foreach (BlockType block in Enum.GetValues(typeof(BlockType)))
+                var blocktype = ParseBlockType(type.ToLower());
+                var success = AntiAds.TryDisableGuild(Context.Guild, blocktype);
+
+                if (success)
                 {
-                    if (block == BlockType.All)
-                        continue;
-                    success = await AntiAds.TryDisableGuild(Context.Guild.Id, block);
+                    await ReplyAsync($":white_check_mark: No longer blocking {blocktype}.");
+                    await _logChannelService.LogMessageAsync(_client, Context.Client,
+                        Emote.Parse("<:Action:333712615731888129>"),
+                        $"{Context.User} disabled {blocktype} in {Context.Guild}").ConfigureAwait(false);
+                }
+                else
+                {
+                    await ReplyAsync($":exclamation: {blocktype} is already disabled!");
                 }
             }
-            else
+            catch (KeyNotFoundException ex)
             {
-                success = await AntiAds.TryDisableGuild(Context.Guild.Id, blocktype);
-            }
-
-            if (success)
-            {
-                await ReplyAsync(
-                    $"No longer blocking {blocktype}.");
-                await _logChannelService.LogMessageAsync(_client, Context.Client,
-                    Emote.Parse("<:Action:333712615731888129>"),
-                    $"{Context.User} disabled {blocktype} in {Context.Guild}").ConfigureAwait(false);
-            }
-            else
-            {
-                await ReplyAsync($"{blocktype} is already enabled!");
+                await ReplyAsync(ex.Message);
             }
         }
 
@@ -124,11 +147,8 @@ namespace NoAdsHere.Commands.Blocks
                 case "steam":
                     return BlockType.SteamScam;
 
-                case "all":
-                    return BlockType.All;
-
                 default:
-                    throw new ArgumentException("Invalid Blocktype");
+                    throw new KeyNotFoundException($"Blocktype `{type}` does not Exist!");
             }
         }
     }
