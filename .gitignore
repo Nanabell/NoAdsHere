@@ -262,8 +262,8 @@ __pycache__/
 
 # Custom
 config.json
+config.yaml
 NLog.CONFIG
-database/*
 logs/*
-*.yml
-!appveyor.yml
+.vscode
+*.db
