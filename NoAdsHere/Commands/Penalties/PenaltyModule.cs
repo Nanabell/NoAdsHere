@@ -71,9 +71,9 @@ namespace NoAdsHere.Commands.Penalties
 
             var sb = new StringBuilder();
             sb.AppendLine("```");
-            foreach (var penalty in penalties.OrderBy(o => o.Id))
+            foreach (var penalty in penalties.OrderBy(p => p.RequiredPoints))
             {
-                sb.AppendLine($"{penalty.Id.ToString().PadRight(2)}: {penalty.PenaltyType.ToString().PadRight(11)} @ {penalty.RequiredPoints} Points | {penalty.Message ?? "Default Message"}");
+                sb.AppendLine($"{penalty.Id.ToString().PadRight(4)}: {penalty.PenaltyType.ToString().PadRight(11)} @ {penalty.RequiredPoints} Points | {penalty.Message ?? "Default Message"}");
             }
             sb.AppendLine("```");
 
