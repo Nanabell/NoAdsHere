@@ -3,10 +3,12 @@ using Discord.Commands;
 using Discord.WebSocket;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
+using NoAdsHere.Database.UnitOfWork;
 using NoAdsHere.Services.AntiAds;
 using NoAdsHere.Services.LogService;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,11 +19,13 @@ namespace NoAdsHere.Commands.Blocks
     {
         private readonly LogChannelService _logChannelService;
         private readonly DiscordShardedClient _client;
+        private readonly IUnitOfWork _unit;
 
-        public BlockModule(LogChannelService logChannelService, DiscordShardedClient client)
+        public BlockModule(LogChannelService logChannelService, DiscordShardedClient client, IUnitOfWork unit)
         {
             _logChannelService = logChannelService;
             _client = client;
+            _unit = unit;
         }
 
         [Command("Enable All")]
@@ -112,6 +116,19 @@ namespace NoAdsHere.Commands.Blocks
             {
                 await ReplyAsync(ex.Message);
             }
+        }
+
+        [Command("List")]
+        [RequirePermission(AccessLevel.HighModerator)]
+        public async Task List()
+        {
+            var sb = new StringBuilder();
+            var blocks = await _unit.Blocks.GetAllAsync(Context.Guild);
+
+            foreach (BlockType block in Enum.GetValues(typeof(BlockType)))
+                sb.AppendLine($"{(blocks.Any(b => b.BlockType == block) ? ":white_check_mark:" : ":x:")} {block}");
+
+            await ReplyAsync(sb.ToString());
         }
 
         public static BlockType ParseBlockType(string type)
