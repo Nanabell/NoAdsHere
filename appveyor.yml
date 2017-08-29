@@ -10,6 +10,6 @@ environment:
 init:
   - ps: $Env:BUILD = "$($Env:APPVEYOR_BUILD_NUMBER.PadLeft(5, "0"))"
 before_build:
-  - appveyor-retry dotnet restore NoAdsHere.sln -s https://www.myget.org/F/discord-net/api/v3/index.json
+  - appveyor-retry dotnet restore NoAdsHere.sln -s https://www.myget.org/F/discord-net/api/v3/index.json -s https://api.nuget.org/v3/index.json
 build_script:
   - dotnet build "NoAdsHere\NoAdsHere.csproj" -c %CONFIGURATION% --no-dependencies
