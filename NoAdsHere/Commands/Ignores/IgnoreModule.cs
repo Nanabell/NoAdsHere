@@ -10,6 +10,7 @@ using NoAdsHere.Database.UnitOfWork;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Ignores
@@ -213,6 +214,47 @@ namespace NoAdsHere.Commands.Ignores
             {
                 await ReplyAsync($":exclamation: User {role}`(ID: {role.Id})` is not whitelisted for blocktype `{type}`!");
             }
+        }
+
+        [Command("List")]
+        [RequirePermission(AccessLevel.Moderator)]
+        public async Task List()
+        {
+            var sb = new StringBuilder();
+            var ignores = await _unit.Ignores.GetAllAsync(Context.Guild);
+            sb.AppendLine("```");
+
+            foreach (var ignore in ignores.OrderBy(i => i.IgnoreType).GroupBy(i => i.IgnoredId))
+            {
+                switch (ignore.First().IgnoreType)
+                {
+                    case IgnoreType.User:
+                        sb.Append("USER: ");
+
+                        var user = Context.Guild.GetUser(ignore.Key);
+                        sb.Append(user != null ? user.ToString() : "USER LEFT");
+
+                        sb.Append(" => ");
+                        sb.AppendLine($"{string.Join(", ", ignore.Select(i => i.BlockType))} ");
+                        break;
+
+                    case IgnoreType.Role:
+
+                        sb.Append("USER: ");
+
+                        var role = Context.Guild.GetRole(ignore.Key);
+                        sb.Append(role != null ? role.ToString() : "USER LEFT" + " ");
+
+                        sb.Append(" => ");
+                        sb.AppendLine($"{string.Join(", ", ignore.Select(i => i.BlockType))} ");
+                        break;
+                }
+            }
+            sb.AppendLine("```");
+            if (sb.Length > 6)
+                await ReplyAsync(sb.ToString());
+            else
+                await ReplyAsync("Currently no ignores");
         }
     }
 }
