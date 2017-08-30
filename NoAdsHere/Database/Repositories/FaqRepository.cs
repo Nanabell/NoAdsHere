@@ -65,7 +65,7 @@ namespace NoAdsHere.Database.Repositories
             var faqs = GetAll(guildId);
             var faqDictionary = faqs.ToDictionary(faq => faq, faq => LevenshteinDistance.Compute(name, faq.Name));
             return faqDictionary
-                .Where(pair => pair.Value >= Convert.ToInt32(config["MaxLevenshteinDistance"]))
+                .Where(pair => pair.Value <= Convert.ToInt32(config["MaxLevenshteinDistance"]))
                 .OrderBy(pair => pair.Value)
                 .ToDictionary();
         }
@@ -81,7 +81,7 @@ namespace NoAdsHere.Database.Repositories
             var faqs = await GetAllAsync(guildId);
             var faqDictionary = faqs.ToDictionary(faq => faq, faq => LevenshteinDistance.Compute(name, faq.Name));
             return faqDictionary
-                .Where(pair => pair.Value >= Convert.ToInt32(config["MaxLevenshteinDistance"]))
+                .Where(pair => pair.Value <= Convert.ToInt32(config["MaxLevenshteinDistance"]))
                 .OrderBy(pair => pair.Value)
                 .ToDictionary();
         }
