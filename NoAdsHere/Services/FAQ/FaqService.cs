@@ -55,7 +55,11 @@ namespace NoAdsHere.Services.FAQ
             var result = await _commandService.ExecuteAsync(context, argPos, _provider);
 
             if (!result.IsSuccess)
+            {
+                if (message.HasStringPrefix(_config["Prefixes:Main"], ref argPos, StringComparison.OrdinalIgnoreCase))
+                    return;
                 _logger.LogWarning(new EventId(515), result.ErrorReason);
+            }
         }
     }
 
