@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
+using Microsoft.Extensions.Configuration;
 using NoAdsHere.Database.Entities.Guild;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Database.Repositories.Interfaces
 {
@@ -23,12 +24,12 @@ namespace NoAdsHere.Database.Repositories.Interfaces
 
         Task<IEnumerable<Faq>> GetAllAsync(ulong guildId);
 
-        Dictionary<Faq, int> GetSimilar(IGuild guild, string name);
+        Dictionary<Faq, int> GetSimilar(IConfigurationRoot config, IGuild guild, string name);
 
-        Dictionary<Faq, int> GetSimilar(ulong guildId, string name);
+        Dictionary<Faq, int> GetSimilar(IConfigurationRoot config, ulong guildId, string name);
 
-        Task<Dictionary<Faq, int>> GetSimilarAsync(IGuild guild, string name);
+        Task<Dictionary<Faq, int>> GetSimilarAsync(IConfigurationRoot config, IGuild guild, string name);
 
-        Task<Dictionary<Faq, int>> GetSimilarAsync(ulong guildId, string name);
+        Task<Dictionary<Faq, int>> GetSimilarAsync(IConfigurationRoot config, ulong guildId, string name);
     }
 }

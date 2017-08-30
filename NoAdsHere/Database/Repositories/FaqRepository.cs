@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using MoreLinq;
 using NoAdsHere.Common;
 using NoAdsHere.Database.Entities.Guild;
 using NoAdsHere.Database.Repositories.Interfaces;
-using MoreLinq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace NoAdsHere.Database.Repositories
 {
@@ -53,34 +54,34 @@ namespace NoAdsHere.Database.Repositories
         public async Task<IEnumerable<Faq>> GetAllAsync(ulong guildId)
             => await Context.Faqs.Where(faq => faq.GuildId == guildId).ToListAsync();
 
-        public Dictionary<Faq, int> GetSimilar(IGuild guild, string name)
+        public Dictionary<Faq, int> GetSimilar(IConfigurationRoot config, IGuild guild, string name)
         {
             if (guild == null) throw new ArgumentNullException(nameof(guild));
-            return GetSimilar(guild.Id, name);
+            return GetSimilar(config, guild.Id, name);
         }
 
-        public Dictionary<Faq, int> GetSimilar(ulong guildId, string name)
+        public Dictionary<Faq, int> GetSimilar(IConfigurationRoot config, ulong guildId, string name)
         {
             var faqs = GetAll(guildId);
             var faqDictionary = faqs.ToDictionary(faq => faq, faq => LevenshteinDistance.Compute(name, faq.Name));
             return faqDictionary
-                .Where(pair => pair.Value >= 4)
+                .Where(pair => pair.Value >= Convert.ToInt32(config["MaxLevenshteinDistance"]))
                 .OrderBy(pair => pair.Value)
                 .ToDictionary();
         }
 
-        public async Task<Dictionary<Faq, int>> GetSimilarAsync(IGuild guild, string name)
+        public async Task<Dictionary<Faq, int>> GetSimilarAsync(IConfigurationRoot config, IGuild guild, string name)
         {
             if (guild == null) throw new ArgumentNullException(nameof(guild));
-            return await GetSimilarAsync(guild.Id, name);
+            return await GetSimilarAsync(config, guild.Id, name);
         }
 
-        public async Task<Dictionary<Faq, int>> GetSimilarAsync(ulong guildId, string name)
+        public async Task<Dictionary<Faq, int>> GetSimilarAsync(IConfigurationRoot config, ulong guildId, string name)
         {
             var faqs = await GetAllAsync(guildId);
             var faqDictionary = faqs.ToDictionary(faq => faq, faq => LevenshteinDistance.Compute(name, faq.Name));
             return faqDictionary
-                .Where(pair => pair.Value >= 4)
+                .Where(pair => pair.Value >= Convert.ToInt32(config["MaxLevenshteinDistance"]))
                 .OrderBy(pair => pair.Value)
                 .ToDictionary();
         }
