@@ -63,10 +63,12 @@ namespace NoAdsHere.Services.FAQ
     internal class FaqCommands : ModuleBase
     {
         private readonly IUnitOfWork _unit;
+        private readonly IConfigurationRoot _config;
 
-        public FaqCommands(IUnitOfWork unit)
+        public FaqCommands(IUnitOfWork unit, IConfigurationRoot config)
         {
             _unit = unit;
+            _config = config;
         }
 
         [Command("faq"), Alias("faqs")]
@@ -106,7 +108,7 @@ namespace NoAdsHere.Services.FAQ
 
                     if (faqs.Any())
                     {
-                        var similarFaqs = await _unit.Faqs.GetSimilarAsync(Context.Guild, name);
+                        var similarFaqs = await _unit.Faqs.GetSimilarAsync(_config, Context.Guild, name);
 
                         if (similarFaqs.Any())
                         {

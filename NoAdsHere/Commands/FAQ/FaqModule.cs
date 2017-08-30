@@ -2,6 +2,7 @@
 using Discord.Addons.InteractiveCommands;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using NLog;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
@@ -18,13 +19,15 @@ namespace NoAdsHere.Commands.FAQ
     public class FaqModule : ModuleBase
     {
         private readonly DiscordShardedClient _client;
+        private readonly IConfigurationRoot _config;
         private InteractiveService _interactiveService;
         private readonly IUnitOfWork _unit;
 
-        public FaqModule(IUnitOfWork unit, DiscordShardedClient client)
+        public FaqModule(IUnitOfWork unit, DiscordShardedClient client, IConfigurationRoot config)
         {
             _unit = unit;
             _client = client;
+            _config = config;
         }
 
         [Command("Add", RunMode = RunMode.Async)]
@@ -148,7 +151,7 @@ namespace NoAdsHere.Commands.FAQ
             }
             else
             {
-                var similar = await _unit.Faqs.GetSimilarAsync(Context.Guild, name);
+                var similar = await _unit.Faqs.GetSimilarAsync(_config, Context.Guild, name);
                 if (similar.Any())
                     await ReplyAsync($"No FAQ Entry with the name `{name}` found. Did you mean:\n" + string.Join(" ", similar.Select(pair => "`" + pair.Key.Name + "`")));
                 else
