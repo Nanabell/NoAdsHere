@@ -40,7 +40,7 @@ namespace NoAdsHere
         public Task StopHandler()
         {
             _client.MessageReceived -= ProccessCommandAsync;
-            _logger.LogInformation(new EventId(200, "Stopped"), "CommandHandler stopped successfully");
+            _logger.LogInformation(new EventId(200), "CommandHandler stopped successfully");
             return Task.CompletedTask;
         }
 

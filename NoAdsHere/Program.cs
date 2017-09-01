@@ -18,17 +18,14 @@ using System.Threading.Tasks;
 
 namespace NoAdsHere
 {
-    internal class Program
+    internal static class Program
     {
-        private static void Main() =>
-            new Program().RunAsync().GetAwaiter().GetResult();
+        private static DiscordShardedClient _client;
+        private static IConfigurationRoot _config;
+        private static NoAdsHereContext _context;
+        private static ILogger _logger;
 
-        private DiscordShardedClient _client;
-        private IConfigurationRoot _config;
-        private NoAdsHereContext _context;
-        private ILogger _logger;
-
-        private async Task RunAsync()
+        public static async Task Main()
         {
             _context = new NoAdsHereContext();
             await _context.Database.EnsureCreatedAsync();
@@ -36,11 +33,11 @@ namespace NoAdsHere
             _config = BuildConfiguration();
             var provider = ConfigureServices(_config);
 
-            _logger = provider.GetService<ILoggerFactory>().CreateLogger<Program>();
+            _logger = provider.GetService<ILoggerFactory>().CreateLogger(typeof(Program));
             _client = provider.GetService<DiscordShardedClient>();
             _config = provider.GetService<IConfigurationRoot>();
 
-            _logger.LogInformation(new EventId(100, "starting..."), $"Starting client with {_config["Shards"]} shard/s");
+            _logger.LogInformation(new EventId(100), $"Starting client with {_config["Shards"]} shard/s");
 
             await EventHandlers.StartServiceHandlers(provider);
 
@@ -58,10 +55,10 @@ namespace NoAdsHere
             return scheduler;
         }
 
-        private IServiceProvider ConfigureServices(IConfigurationRoot config)
+        private static IServiceProvider ConfigureServices(IConfigurationRoot config)
         {
             var provider = new ServiceCollection()
-                .AddLogging(builder => builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace))
+                .AddLogging(builder => builder.SetMinimumLevel(LogLevel.Trace))
                 .AddSingleton(new DiscordShardedClient(new DiscordSocketConfig
                 {
                     LogLevel = LogSeverity.Debug,
@@ -79,7 +76,6 @@ namespace NoAdsHere
                 .AddSingleton(new NoAdsHereUnit(new NoAdsHereContext()) as IUnitOfWork)
                 .AddSingleton(new LogChannelService(_config))
                 .AddSingleton(GetTaskScheduler().GetAwaiter().GetResult())
-                //.AddSingleton(new InteractiveService(_client.Shards.First()))
                 .BuildServiceProvider();
 
             ConfigureLogging(provider);
@@ -87,7 +83,7 @@ namespace NoAdsHere
             return provider;
         }
 
-        private void ConfigureLogging(IServiceProvider provider)
+        private static void ConfigureLogging(IServiceProvider provider)
         {
             var factory = provider.GetService<ILoggerFactory>();
             factory.AddNLog();
