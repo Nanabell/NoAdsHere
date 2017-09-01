@@ -6,6 +6,18 @@ namespace NoAdsHere.Database
 {
     public class NoAdsHereContext : DbContext
     {
+        private readonly string _dbPath;
+
+        public NoAdsHereContext()
+        {
+            _dbPath = "NoAdsHere.db";
+        }
+
+        public NoAdsHereContext(string dbPath)
+        {
+            _dbPath = dbPath;
+        }
+
         public DbSet<Master> Masters { get; set; }
         public DbSet<Block> Blocks { get; set; }
         public DbSet<Ignore> Ignores { get; set; }
@@ -16,7 +28,7 @@ namespace NoAdsHere.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite(@"Data Source=NoAdsHere.db").UseMemoryCache(null);
+            optionsBuilder.UseSqlite($@"Data Source={_dbPath}").UseMemoryCache(null);
         }
     }
 }
