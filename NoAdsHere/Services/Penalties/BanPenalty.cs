@@ -21,7 +21,7 @@ namespace NoAdsHere.Services.Penalties
                 {
                     try
                     {
-                        await context.Guild.AddBanAsync(context.User);
+                        await context.Guild.AddBanAsync(context.User, 1, $"Banned for Advertisement in {context.Channel}. Trigger: {trigger}");
                         IUserMessage msg;
                         if (emote == null) emote = Emote.Parse("<:Ban:330793436309487626>");
                         if (self.GuildPermissions.UseExternalEmojis && emote != null)

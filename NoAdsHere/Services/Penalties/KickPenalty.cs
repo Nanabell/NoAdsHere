@@ -20,7 +20,7 @@ namespace NoAdsHere.Services.Penalties
                 {
                     try
                     {
-                        await ((IGuildUser)context.User).KickAsync();
+                        await ((IGuildUser)context.User).KickAsync($"Kicked for Advertisement in {context.Channel}. Trigger: {trigger}");
                         IUserMessage msg;
                         if (emote == null) emote = Emote.Parse("<:Kick:330793607919566852>");
                         if (self.GuildPermissions.UseExternalEmojis && emote != null)
