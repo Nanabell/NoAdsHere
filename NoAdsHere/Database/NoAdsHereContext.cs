@@ -16,7 +16,7 @@ namespace NoAdsHere.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite(@"Data Source=NoAdsHere.db");
+            optionsBuilder.UseSqlite(@"Data Source=NoAdsHere.db").UseMemoryCache(null);
         }
     }
 }
