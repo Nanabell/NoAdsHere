@@ -1,11 +1,12 @@
-﻿using System;
-using NoAdsHere.Database.Repositories.Interfaces;
+﻿using NoAdsHere.Database.Repositories.Interfaces;
+using System;
 
 namespace NoAdsHere.Database.UnitOfWork
 {
     public interface IUnitOfWork : IDisposable
     {
         IMasterRepository Masters { get; }
+        ISettingsRepository Settings { get; }
         IBlockRepository Blocks { get; }
         IIgnoreRepository Ignores { get; }
         IPenaltyRepository Penalties { get; }

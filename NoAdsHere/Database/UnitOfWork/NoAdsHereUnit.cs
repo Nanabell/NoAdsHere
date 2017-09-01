@@ -11,6 +11,7 @@ namespace NoAdsHere.Database.UnitOfWork
         {
             _context = context;
             Masters = new MasterRepository(_context);
+            Settings = new SettingsRepository(_context);
             Blocks = new BlockRepository(_context);
             Ignores = new IgnoreRepository(_context);
             Penalties = new PenaltyRepository(_context);
@@ -20,6 +21,7 @@ namespace NoAdsHere.Database.UnitOfWork
         }
 
         public IMasterRepository Masters { get; }
+        public ISettingsRepository Settings { get; }
         public IBlockRepository Blocks { get; }
         public IIgnoreRepository Ignores { get; }
         public IPenaltyRepository Penalties { get; }

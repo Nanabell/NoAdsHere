@@ -19,6 +19,7 @@ namespace NoAdsHere.Database
         }
 
         public DbSet<Master> Masters { get; set; }
+        public DbSet<Settings> Settings { get; set; }
         public DbSet<Block> Blocks { get; set; }
         public DbSet<Ignore> Ignores { get; set; }
         public DbSet<Penalty> Penalties { get; set; }

@@ -12,9 +12,10 @@ using System;
 namespace NoAdsHere.Migrations
 {
     [DbContext(typeof(NoAdsHereContext))]
-    partial class NoAdsHereContextModelSnapshot : ModelSnapshot
+    [Migration("20170901134522_Add_Guild_Settings")]
+    partial class Add_Guild_Settings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
