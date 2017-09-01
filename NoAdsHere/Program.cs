@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Yaml;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +29,7 @@ namespace NoAdsHere
         public static async Task Main()
         {
             _context = new NoAdsHereContext();
-            await _context.Database.EnsureCreatedAsync();
+            await _context.Database.MigrateAsync();
 
             _config = BuildConfiguration();
             var provider = ConfigureServices(_config);
