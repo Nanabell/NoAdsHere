@@ -8,6 +8,7 @@ using NoAdsHere.Common;
 using NoAdsHere.Database.Entities.Guild;
 using NoAdsHere.Database.UnitOfWork;
 using NoAdsHere.Services.FAQ;
+using NoAdsHere.Services.Github;
 using NoAdsHere.Services.LogService;
 using NoAdsHere.Services.Penalties;
 using System;
@@ -56,6 +57,9 @@ namespace NoAdsHere.Services.Events
 
             await JobQueue.Install(provider);
             _logger.LogInformation(new EventId(200), "Loaded JobQueue");
+
+            var githubService = new GithubService(_client, _unit);
+            await githubService.StartAsync();
 
             _client.Log += ClientLogger;
             cmdService.Log += CommandLogger;
