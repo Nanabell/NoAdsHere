@@ -4,7 +4,7 @@ namespace NoAdsHere.Common
     {
         InstantInvite,
         YoutubeLink,
-        SteamScam,
+        SteamScam, //Removed
         TwitchStream,
         TwitchVideo,
         TwitchClip
