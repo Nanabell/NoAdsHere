@@ -104,7 +104,7 @@ namespace NoAdsHere.Commands.Ignores
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task RemoveAll(IGuildUser guildUser)
         {
-            var ignores = _unit.Ignores.Get(guildUser);
+            var ignores = _unit.Ignores.Get(guildUser).ToList();
 
             if (ignores.Any())
             {
@@ -123,7 +123,7 @@ namespace NoAdsHere.Commands.Ignores
         [RequirePermission(AccessLevel.HighModerator)]
         public async Task RemoveAll(IRole role)
         {
-            var ignores = _unit.Ignores.Get(role);
+            var ignores = _unit.Ignores.Get(role).ToList();
 
             if (ignores.Any())
             {
@@ -183,7 +183,7 @@ namespace NoAdsHere.Commands.Ignores
         public async Task Remove(string blocktype, IGuildUser guildUser)
         {
             var type = BlockModule.ParseBlockType(blocktype.ToLower());
-            var ignore = _unit.Ignores.Get(guildUser).Where(ig => ig.BlockType == type).FirstOrDefault();
+            var ignore = _unit.Ignores.Get(guildUser).FirstOrDefault(ig => ig.BlockType == type);
 
             if (ignore != null)
             {
@@ -202,7 +202,7 @@ namespace NoAdsHere.Commands.Ignores
         public async Task Remove(string blocktype, IRole role)
         {
             var type = BlockModule.ParseBlockType(blocktype.ToLower());
-            var ignore = _unit.Ignores.Get(role).Where(ig => ig.BlockType == type).FirstOrDefault();
+            var ignore = _unit.Ignores.Get(role).FirstOrDefault(ig => ig.BlockType == type);
 
             if (ignore != null)
             {
