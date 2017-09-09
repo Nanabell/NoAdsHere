@@ -14,11 +14,13 @@ namespace NoAdsHere.Commands.Ungrouped
     [Name("Not Grouped")]
     public class UngroupedModule : ModuleBase
     {
+        private readonly ViolationsService _violationsService;
         private readonly IConfigurationRoot _config;
         private readonly IUnitOfWork _unit;
 
-        public UngroupedModule(IConfigurationRoot config, IUnitOfWork unit)
+        public UngroupedModule(ViolationsService violationsService, IConfigurationRoot config, IUnitOfWork unit)
         {
+            _violationsService = violationsService;
             _config = config;
             _unit = unit;
         }
@@ -46,7 +48,7 @@ namespace NoAdsHere.Commands.Ungrouped
             var violator = await _unit.Violators.GetOrCreateAsync(Context.User as IGuildUser);
             var penalties = await _unit.Penalties.GetAllAsync(Context.Guild);
 
-            violator = Violations.DecreasePoints(Context, violator);
+            violator = _violationsService.DecreasePoints(Context, violator);
             _unit.SaveChanges();
 
             var nextPenalty = penalties.OrderBy(p => p.RequiredPoints).FirstOrDefault(penalty => penalty.RequiredPoints > violator.Points);

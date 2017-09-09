@@ -15,6 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using NoAdsHere.Services.AntiAds;
+using NoAdsHere.Services.Violations;
 
 namespace NoAdsHere.Services.Events
 {
@@ -36,7 +38,10 @@ namespace NoAdsHere.Services.Events
             _unit = provider.GetService<IUnitOfWork>();
             _factory = provider.GetService<ILoggerFactory>();
             _logger = _factory.CreateLogger(typeof(EventHandlers));
+            var adsService = provider.GetService<AntiAdsService>();
             var cmdService = provider.GetService<CommandService>();
+            var faqService = provider.GetService<FaqService>();
+            var githubService = provider.GetService<GithubService>();
 
             await ReadyLogger();
 
@@ -44,22 +49,17 @@ namespace NoAdsHere.Services.Events
             await _handler.LoadModulesAndStartAsync();
             _logger.LogInformation(new EventId(200), "Created & Started CommandHandler");
 
-            await FaqService.Install(provider);
-            await FaqService.LoadFaqs();
+            await faqService.LoadFaqsAsync();
             _logger.LogInformation(new EventId(200), "Installed and loaded FAQ Service");
 
-            await AntiAds.AntiAds.Install(provider);
-            await AntiAds.AntiAds.StartAsync();
+            adsService.StartService();
             _logger.LogInformation(new EventId(200), "Started AntiAds Service");
-
-            await Violations.Violations.Install(provider);
-            _logger.LogInformation(new EventId(200), "Started Violations Service");
 
             await JobQueue.Install(provider);
             _logger.LogInformation(new EventId(200), "Loaded JobQueue");
 
-            var githubService = new GithubService(_client, _unit);
             await githubService.StartAsync();
+            _logger.LogInformation(new EventId(200), "Started Github service");
 
             _client.Log += ClientLogger;
             cmdService.Log += CommandLogger;

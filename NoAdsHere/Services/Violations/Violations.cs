@@ -2,7 +2,6 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NoAdsHere.Common;
 using NoAdsHere.Database.Entities.Guild;
@@ -15,27 +14,27 @@ using System.Threading.Tasks;
 
 namespace NoAdsHere.Services.Violations
 {
-    public static class Violations
+    public class ViolationsService
     {
-        private static DiscordShardedClient _client;
-        private static LogChannelService _logChannelService;
-        private static IUnitOfWork _unit;
-        private static IConfigurationRoot _config;
-        private static ILoggerFactory _factory;
-        private static ILogger _logger;
+        private readonly DiscordShardedClient _client;
+        private readonly LogChannelService _logChannelService;
+        private readonly IUnitOfWork _unit;
+        private readonly IConfigurationRoot _config;
+        private readonly ILoggerFactory _factory;
+        private readonly ILogger _logger;
 
-        public static Task Install(IServiceProvider provider)
+        public ViolationsService(DiscordShardedClient client, IUnitOfWork unit, IConfigurationRoot configuration,
+            LogChannelService logChannelService, ILoggerFactory factory)
         {
-            _client = provider.GetService<DiscordShardedClient>();
-            _unit = provider.GetService<IUnitOfWork>();
-            _logChannelService = provider.GetService<LogChannelService>();
-            _config = provider.GetService<IConfigurationRoot>();
-            _factory = provider.GetService<ILoggerFactory>();
-            _logger = _factory.CreateLogger(typeof(Violations));
-            return Task.CompletedTask;
+            _client = client;
+            _logChannelService = logChannelService;
+            _unit = unit;
+            _config = configuration;
+            _factory = factory;
+            _logger = factory.CreateLogger<ViolationsService>();
         }
 
-        public static async Task Add(ICommandContext context, BlockType blockType)
+        public async Task Add(ICommandContext context, BlockType blockType)
         {
             var violator = await _unit.Violators.GetOrCreateAsync(context.User as IGuildUser);
             violator = DecreasePoints(context, violator);
@@ -44,7 +43,7 @@ namespace NoAdsHere.Services.Violations
             _unit.SaveChanges();
         }
 
-        private static Violator IncreasePoint(ICommandContext context, Violator violator)
+        private Violator IncreasePoint(ICommandContext context, Violator violator)
         {
             violator.LatestViolation = DateTime.UtcNow;
             violator.Points++;
@@ -52,7 +51,7 @@ namespace NoAdsHere.Services.Violations
             return violator;
         }
 
-        private static async Task ExecutePenalty(ICommandContext context, Violator violator, BlockType blockType)
+        private async Task ExecutePenalty(ICommandContext context, Violator violator, BlockType blockType)
         {
             var penalties = (await _unit.Penalties.GetOrCreateAllAsync(context.Guild)).ToList();
             var stats = await _unit.Statistics.GetOrCreateAsync(context.Guild);
@@ -121,7 +120,7 @@ namespace NoAdsHere.Services.Violations
             }
         }
 
-        private static string GetDefaultMessage(PenaltyType penaltyType)
+        private string GetDefaultMessage(PenaltyType penaltyType)
         {
             switch (penaltyType)
             {
@@ -142,7 +141,7 @@ namespace NoAdsHere.Services.Violations
             }
         }
 
-        private static string GetTrigger(BlockType blockType)
+        private string GetTrigger(BlockType blockType)
         {
             switch (blockType)
             {
@@ -161,15 +160,12 @@ namespace NoAdsHere.Services.Violations
                 case BlockType.YoutubeLink:
                     return "Message contained a YouTube Link.";
 
-                case BlockType.SteamScam:
-                    return "Message contained a Steam Advertisement Link!";
-
                 default:
                     throw new ArgumentOutOfRangeException(nameof(blockType), blockType, null);
             }
         }
 
-        public static Violator DecreasePoints(ICommandContext context, Violator violator)
+        public Violator DecreasePoints(ICommandContext context, Violator violator)
         {
             var decPoints = 0;
             var time = violator.LatestViolation;

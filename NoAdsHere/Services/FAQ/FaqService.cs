@@ -14,31 +14,43 @@ using System.Threading.Tasks;
 
 namespace NoAdsHere.Services.FAQ
 {
-    public static class FaqService
+    public class FaqService
     {
-        private static DiscordShardedClient _client;
-        private static CommandService _commandService;
-        private static IServiceProvider _provider;
-        private static IConfigurationRoot _config;
-        private static ILogger _logger;
+        private readonly DiscordShardedClient _client;
+        private readonly CommandService _commandService;
+        private readonly IServiceProvider _provider;
+        private readonly IConfigurationRoot _config;
+        private readonly IUnitOfWork _unit;
+        private readonly ILogger _logger;
 
-        public static Task Install(IServiceProvider provider)
+        public FaqService(DiscordShardedClient client, IUnitOfWork unit, IConfigurationRoot configuration,
+            ILoggerFactory factory)
         {
-            _provider = provider;
-            _config = provider.GetService<IConfigurationRoot>();
-            _client = provider.GetService<DiscordShardedClient>();
+            _client = client;
             _commandService = new CommandService(new CommandServiceConfig { DefaultRunMode = RunMode.Async });
-            _logger = provider.GetService<ILoggerFactory>().CreateLogger(typeof(FaqService));
-            return Task.CompletedTask;
+            _config = configuration;
+            _unit = unit;
+            _logger = factory.CreateLogger<FaqService>();
+            _provider = CreateProvider();
         }
 
-        public static async Task LoadFaqs()
+        private IServiceProvider CreateProvider()
         {
+            return new ServiceCollection()
+                .AddSingleton(_config)
+                .AddSingleton(_unit)
+                .BuildServiceProvider();
+        }
+
+        public async Task LoadFaqsAsync()
+        {
+            _logger.LogInformation(new EventId(100), "Starting up Faq serice...");
             _client.MessageReceived += FaqProccesser;
             await _commandService.AddModuleAsync<FaqCommands>();
+            _logger.LogInformation(new EventId(200), "Faq service started");
         }
 
-        private static async Task FaqProccesser(SocketMessage socketMessage)
+        private async Task FaqProccesser(SocketMessage socketMessage)
         {
             var argPos = 0;
             var message = socketMessage as SocketUserMessage;

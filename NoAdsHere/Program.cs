@@ -16,10 +16,14 @@ using Quartz.Impl;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using NoAdsHere.Services.AntiAds;
+using NoAdsHere.Services.FAQ;
+using NoAdsHere.Services.Github;
+using NoAdsHere.Services.Violations;
 
 namespace NoAdsHere
 {
-    internal static class Program
+    public static class Program
     {
         private static DiscordShardedClient _client;
         private static IConfigurationRoot _config;
@@ -76,6 +80,10 @@ namespace NoAdsHere
                 .AddSingleton(_config)
                 .AddSingleton(new NoAdsHereUnit(new NoAdsHereContext()) as IUnitOfWork)
                 .AddSingleton(new LogChannelService(_config))
+                .AddSingleton<AntiAdsService>()
+                .AddSingleton<FaqService>()
+                .AddSingleton<ViolationsService>()
+                .AddSingleton<GithubService>()
                 .AddSingleton(GetTaskScheduler().GetAwaiter().GetResult())
                 .BuildServiceProvider();
 
@@ -91,7 +99,7 @@ namespace NoAdsHere
             factory.ConfigureNLog("../../../NLog.config");
         }
 
-        private static IConfigurationRoot BuildConfiguration()
+        public static IConfigurationRoot BuildConfiguration()
         {
             try
             {

@@ -17,12 +17,14 @@ namespace NoAdsHere.Commands.Blocks
     [Name("Blocks"), Alias("Block"), Group("Blocks")]
     public class BlockModule : ModuleBase<SocketCommandContext>
     {
+        private readonly AntiAdsService _adsService;
         private readonly LogChannelService _logChannelService;
         private readonly DiscordShardedClient _client;
         private readonly IUnitOfWork _unit;
 
-        public BlockModule(LogChannelService logChannelService, DiscordShardedClient client, IUnitOfWork unit)
+        public BlockModule(AntiAdsService adsService, LogChannelService logChannelService, DiscordShardedClient client, IUnitOfWork unit)
         {
+            _adsService = adsService;
             _logChannelService = logChannelService;
             _client = client;
             _unit = unit;
@@ -36,10 +38,9 @@ namespace NoAdsHere.Commands.Blocks
             var sb = new StringBuilder();
             foreach (BlockType type in Enum.GetValues(typeof(BlockType)))
             {
-                if (!AntiAds.TryEnableGuild(Context.Guild, type))
-                    sb.AppendLine($":exclamation: Failed to enable `{type}`. Already enabled!");
-                else
-                    sb.AppendLine($":white_check_mark: Enabled `{type}`.");
+                sb.AppendLine(!_adsService.TryEnableGuild(Context.Guild, type)
+                    ? $":exclamation: Failed to enable `{type}`. Already enabled!"
+                    : $":white_check_mark: Enabled `{type}`.");
             }
             sb.AppendLine($"Please ensure that the bot has `MANAGE_MESSAGES` permission in the required channels");
             await ReplyAsync(sb.ToString());
@@ -55,10 +56,9 @@ namespace NoAdsHere.Commands.Blocks
             var sb = new StringBuilder();
             foreach (BlockType type in Enum.GetValues(typeof(BlockType)))
             {
-                if (!AntiAds.TryDisableGuild(Context.Guild, type))
-                    sb.AppendLine($":exclamation: Failed to disable `{type}`. Already disabled!");
-                else
-                    sb.AppendLine($":white_check_mark: Disabled `{type}`.");
+                sb.AppendLine(!_adsService.TryDisableGuild(Context.Guild, type)
+                    ? $":exclamation: Failed to disable `{type}`. Already disabled!"
+                    : $":white_check_mark: Disabled `{type}`.");
             }
             await ReplyAsync(sb.ToString());
             await _logChannelService.LogMessageAsync(_client, Context.Client, Emote.Parse("<:Action:333712615731888129>"),
@@ -72,7 +72,7 @@ namespace NoAdsHere.Commands.Blocks
             try
             {
                 var blocktype = ParseBlockType(type.ToLower());
-                var success = AntiAds.TryEnableGuild(Context.Guild, blocktype);
+                var success = _adsService.TryEnableGuild(Context.Guild, blocktype);
 
                 if (success)
                 {
@@ -98,7 +98,7 @@ namespace NoAdsHere.Commands.Blocks
             try
             {
                 var blocktype = ParseBlockType(type.ToLower());
-                var success = AntiAds.TryDisableGuild(Context.Guild, blocktype);
+                var success = _adsService.TryDisableGuild(Context.Guild, blocktype);
 
                 if (success)
                 {
@@ -123,7 +123,7 @@ namespace NoAdsHere.Commands.Blocks
         public async Task List()
         {
             var sb = new StringBuilder();
-            var blocks = await _unit.Blocks.GetAllAsync(Context.Guild);
+            var blocks = (await _unit.Blocks.GetAllAsync(Context.Guild)).ToList();
 
             foreach (BlockType block in Enum.GetValues(typeof(BlockType)))
                 sb.AppendLine($"{(blocks.Any(b => b.BlockType == block) ? ":white_check_mark:" : ":x:")} {block}");
@@ -160,9 +160,6 @@ namespace NoAdsHere.Commands.Blocks
                 case "clip":
                 case "tclip":
                     return BlockType.TwitchClip;
-
-                case "steam":
-                    return BlockType.SteamScam;
 
                 default:
                     throw new KeyNotFoundException($"Blocktype `{type}` does not Exist!");
