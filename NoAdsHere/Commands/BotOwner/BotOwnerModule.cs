@@ -160,9 +160,9 @@ namespace NoAdsHere.Commands.BotOwner
                     x.Content = !string.IsNullOrWhiteSpace(content) ? content : message.Content;
                 });
             else if (!string.IsNullOrWhiteSpace(content))
-                message = await message.Channel.SendMessageAsync(string.Concat(message.Author.Mention, ": ", content), false, embed);
+                message = await message.Channel.SendMessageAsync(string.Concat(message.Author.Mention, ": ", content), false, embed.Build());
             else
-                message = await message.Channel.SendMessageAsync(message.Author.Mention, false, embed);
+                message = await message.Channel.SendMessageAsync(message.Author.Mention, false, embed.Build());
 
             return message;
         }

@@ -59,7 +59,7 @@ namespace NoAdsHere.Commands.Guild
                 Color = new Color(0xad0a0a),
                 Footer = new EmbedFooterBuilder { Text = $"Uptime: {GetUptime()}" }
             };
-            await ReplyAsync("", embed: embed);
+            await ReplyAsync("", embed: embed.Build());
         }
 
         private static string GetUptime()
