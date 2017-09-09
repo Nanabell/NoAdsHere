@@ -81,7 +81,7 @@ namespace NoAdsHere.Services.Events
                 {
                     _logger.LogInformation(new EventId(100), $"Shard {shard.ShardId} Ready");
                     await _channellogger.LogMessageAsync(_client, shard, Emote.Parse("<:Science:330479610812956672>"),
-                        $"Ready `G:{shard.Guilds.Count}, U:{shard.Guilds.Sum(g => g.Users.Count)}`");
+                        $"Ready `G:{shard.Guilds.Count}, U:{shard.Guilds.Sum(g => g.MemberCount)}`");
                     shard.Ready -= Handler;
                 }
                 shard.Ready += Handler;
