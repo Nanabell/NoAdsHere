@@ -42,7 +42,7 @@ namespace NoAdsHere.Commands.FAQ
             IUserMessage nameMessage = null;
             if (name == null)
             {
-                msg = await ReplyAsync($"{Context.User.Mention} Please give a name for the new FAQ entry!");
+                await msg.ModifyAsync(properties => properties.Content = $"{Context.User.Mention} Please give a name for the new FAQ entry!");
                 nameMessage = await _interactiveService.WaitForMessage(Context.User, Context.Channel, TimeSpan.FromSeconds(30));
                 name = nameMessage.Content;
                 if (name.ToLower() == "cancel")
