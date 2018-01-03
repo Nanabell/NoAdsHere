@@ -4,9 +4,6 @@ using Discord.WebSocket;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using NLog;
-using NoAdsHere.Database.Entities.Global;
-using NoAdsHere.Database.UnitOfWork;
-using NoAdsHere.Services.Events;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -16,20 +13,12 @@ namespace NoAdsHere.Commands.BotOwner
     [Name("Bot Owner")]
     public class BotOwnerModule : ModuleBase
     {
-        private readonly IUnitOfWork _unit;
-
-        public BotOwnerModule(IUnitOfWork unit)
-        {
-            _unit = unit;
-        }
-
         [Command("Shutdown")]
         [RequireOwner]
         public async Task Shutdown()
         {
             await ReplyAsync("*Shutting down..*");
-            var client = Context.Client as DiscordShardedClient;
-            if (client != null)
+            if (Context.Client is DiscordShardedClient client)
             {
                 var _ = StopAsync(client);
             }
@@ -37,8 +26,6 @@ namespace NoAdsHere.Commands.BotOwner
 
         private static async Task StopAsync(DiscordShardedClient client)
         {
-            await EventHandlers.StopCommandHandlerAsync();
-
             await client.LogoutAsync();
             await client.StopAsync();
             var logger = LogManager.GetLogger("Discord");
@@ -46,6 +33,7 @@ namespace NoAdsHere.Commands.BotOwner
             Environment.Exit(0);
         }
 
+        /*
         [Command("Add Master")]
         [RequireOwner]
         public async Task Add_Master(IUser user)
@@ -82,6 +70,7 @@ namespace NoAdsHere.Commands.BotOwner
                 await ReplyAsync($"{user} is not a Master.");
             }
         }
+        */
 
         [Command("Eval", RunMode = RunMode.Async)]
         [RequireOwner]
@@ -107,7 +96,6 @@ namespace NoAdsHere.Commands.BotOwner
                     Context = Context,
                     Message = Context.Message as SocketUserMessage,
                     Client = Context.Client as DiscordShardedClient,
-                    Unit = _unit
                 };
 
                 var sopts = ScriptOptions.Default;
@@ -140,7 +128,6 @@ namespace NoAdsHere.Commands.BotOwner
             public SocketGuild Guild => Channel.Guild;
             public SocketUser User => Message.Author;
             public DiscordShardedClient Client { get; set; }
-            public IUnitOfWork Unit { get; set; }
         }
 
         private Task<IUserMessage> SendEmbedAsync(EmbedBuilder embed, IUserMessage nmsg)

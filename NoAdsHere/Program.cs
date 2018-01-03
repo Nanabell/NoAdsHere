@@ -1,66 +1,54 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Yaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
-using NoAdsHere.Database;
-using NoAdsHere.Database.UnitOfWork;
-using NoAdsHere.Services.Events;
-using NoAdsHere.Services.LogService;
-using Quartz;
-using Quartz.Impl;
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using NoAdsHere.Services.AntiAds;
+using NoAdsHere.Database.Entities;
+using NoAdsHere.Services.Advertisement;
+using NoAdsHere.Services.Events;
 using NoAdsHere.Services.FAQ;
 using NoAdsHere.Services.Github;
-using NoAdsHere.Services.Violations;
 
 namespace NoAdsHere
 {
     public static class Program
     {
         private static DiscordShardedClient _client;
-        private static IConfigurationRoot _config;
-        private static NoAdsHereContext _context;
+        private static IConfiguration _config;
         private static ILogger _logger;
 
         public static async Task Main()
         {
-            _context = new NoAdsHereContext();
-            await _context.Database.MigrateAsync();
-
             _config = BuildConfiguration();
             var provider = ConfigureServices(_config);
 
             _logger = provider.GetService<ILoggerFactory>().CreateLogger(typeof(Program));
             _client = provider.GetService<DiscordShardedClient>();
-            _config = provider.GetService<IConfigurationRoot>();
+            _config = provider.GetService<IConfiguration>();
 
-            _logger.LogInformation(new EventId(100), $"Starting client with {_config["Shards"]} shard/s");
+            provider.GetService<EventLogger>();
+            provider.GetService<AntiAdvertisementService>();
+            provider.GetService<GithubService>();
+            
+            var comands = new CommandHandler(provider);
+            await comands.LoadModulesAndStartAsync();
 
-            await EventHandlers.StartServiceHandlers(provider);
-
-            await _client.LoginAsync(TokenType.Bot, _config["Token"]);
+            _logger.LogInformation($"Starting client with {_config.Get<Config>().Shards} shard/s");
+            await _client.LoginAsync(TokenType.Bot, _config.Get<Config>().Token);
             await _client.StartAsync();
 
             await Task.Delay(-1);
         }
 
-        private static async Task<IScheduler> GetTaskScheduler()
-        {
-            var factory = new StdSchedulerFactory();
-            var scheduler = await factory.GetScheduler();
-            await scheduler.Start();
-            return scheduler;
-        }
 
-        private static IServiceProvider ConfigureServices(IConfigurationRoot config)
+
+        private static IServiceProvider ConfigureServices(IConfiguration config)
         {
             var provider = new ServiceCollection()
                 .AddLogging(builder => builder.SetMinimumLevel(LogLevel.Trace))
@@ -69,7 +57,7 @@ namespace NoAdsHere
                     LogLevel = LogSeverity.Debug,
                     AlwaysDownloadUsers = true,
                     MessageCacheSize = 10,
-                    TotalShards = Convert.ToInt32(config["Shards"])
+                    TotalShards = config.Get<Config>().Shards
                 }))
                 .AddSingleton(new CommandService(new CommandServiceConfig
                 {
@@ -78,13 +66,16 @@ namespace NoAdsHere
                     DefaultRunMode = RunMode.Sync
                 }))
                 .AddSingleton(_config)
-                .AddSingleton(new NoAdsHereUnit(new NoAdsHereContext()) as IUnitOfWork)
-                .AddSingleton(new LogChannelService(_config))
-                .AddSingleton<AntiAdsService>()
+                //.AddSingleton<WebhookLogService>()
+                .AddSingleton<AntiAdvertisementService>()
+                .AddSingleton<EventLogger>()
                 .AddSingleton<FaqService>()
-                .AddSingleton<ViolationsService>()
                 .AddSingleton<GithubService>()
-                .AddSingleton(GetTaskScheduler().GetAwaiter().GetResult())
+                //.AddSingleton<FaqService>()
+                //.AddSingleton<ViolationsServiceOld>()
+                //.AddSingleton<GithubService>()
+                //.AddSingleton<LockdownService>()
+                //.AddSingleton(GetTaskScheduler().GetAwaiter().GetResult())
                 .BuildServiceProvider();
 
             ConfigureLogging(provider);
@@ -99,19 +90,21 @@ namespace NoAdsHere
             factory.ConfigureNLog("../../../NLog.config");
         }
 
-        public static IConfigurationRoot BuildConfiguration()
+        private static IConfigurationRoot BuildConfiguration()
         {
-            try
-            {
-                return new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddYamlFile("config.yaml", false, true)
-                    .Build();
-            }
-            catch (FileNotFoundException)
-            {
-                throw new FileNotFoundException("Configuration File not found!");
-            }
+            return new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddYamlFile("config.yaml", false, true)
+                .Build();
         }
+        /*
+        private static async Task<IScheduler> GetTaskScheduler()
+        {
+            var factory = new StdSchedulerFactory();
+            var scheduler = await factory.GetScheduler();
+            await scheduler.Start();
+            return scheduler;
+        }
+        */
     }
 }

@@ -1,12 +1,7 @@
-﻿using Discord;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Microsoft.Extensions.Configuration;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.UnitOfWork;
-using NoAdsHere.Services.Violations;
-using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Ungrouped
@@ -14,15 +9,11 @@ namespace NoAdsHere.Commands.Ungrouped
     [Name("Not Grouped")]
     public class UngroupedModule : ModuleBase
     {
-        private readonly ViolationsService _violationsService;
-        private readonly IConfigurationRoot _config;
-        private readonly IUnitOfWork _unit;
+        private readonly IConfiguration _config;
 
-        public UngroupedModule(ViolationsService violationsService, IConfigurationRoot config, IUnitOfWork unit)
+        public UngroupedModule(IConfiguration config)
         {
-            _violationsService = violationsService;
             _config = config;
-            _unit = unit;
         }
 
         [Command("Github")]
@@ -41,6 +32,7 @@ namespace NoAdsHere.Commands.Ungrouped
                 "Documentation for NAH can be found on the Github-Wiki pages!\nhttps://github.com/Nanabell/NoAdsHere/wiki");
         }
 
+        /*
         [Command("My Points")]
         [RequirePermission(AccessLevel.User)]
         public async Task My_Points()
@@ -61,5 +53,6 @@ namespace NoAdsHere.Commands.Ungrouped
                 $"You currently have {violator.Points} points. {(until != TimeSpan.Zero ? $"You will lose one point in {until.ToString(@"hh'h'\:mm'm'\:ss's'")}" : "")}" +
                 $"{(nextPenalty != null ? $"\nThe next Penalty*({nextPenalty.PenaltyType})* is at {nextPenalty.RequiredPoints} points" : "")}");
         }
+        */
     }
 }

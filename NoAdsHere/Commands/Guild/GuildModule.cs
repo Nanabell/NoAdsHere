@@ -5,14 +5,13 @@ using Discord.WebSocket;
 using NLog;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.UnitOfWork;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Guild
 {
+    /*
     [Name("Guild"), Group("Guild")]
     public class GuildModule : ModuleBase
     {
@@ -120,4 +119,5 @@ namespace NoAdsHere.Commands.Guild
             return _unit.SaveChanges();
         }
     }
+    */
 }

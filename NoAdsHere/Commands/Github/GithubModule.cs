@@ -1,31 +1,27 @@
 ﻿using Discord.Commands;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.UnitOfWork;
 using System;
 using System.Threading.Tasks;
+using NoAdsHere.Database;
 
 namespace NoAdsHere.Commands.Github
 {
     [Name("GithubService"), Alias("Github"), Group("GithubService")]
     public class GithubModule : ModuleBase
     {
-        private readonly IUnitOfWork _unit;
-
-        public GithubModule(IUnitOfWork unit)
-        {
-            _unit = unit;
-        }
-
         [Command("Add")]
         [RequirePermission(Common.AccessLevel.HighModerator)]
         public async Task Setup([Remainder] string repo)
         {
             if (repo.StartsWith("https://github.com/", StringComparison.Ordinal))
             {
-                var settings = await _unit.Settings.GetOrCreateAsync(Context.Guild);
-                settings.GithubRepo = repo.Split(" ")[0];
-                _unit.SaveChanges();
-                await ReplyAsync($"Repo has been set to <{settings.GithubRepo}>");
+                using (var dbContext = new DatabaseContext(false, true, Context.Guild.Id))
+                {
+                    dbContext.GuildConfig.GithubRepository = repo.Split(" ")[0];
+                    dbContext.SaveChanges();
+                    await ReplyAsync($"Repo has been set to <{dbContext.GuildConfig.GithubRepository}>");                    
+                }
+                
             }
             else
             {
@@ -37,15 +33,17 @@ namespace NoAdsHere.Commands.Github
         [RequirePermission(Common.AccessLevel.HighModerator)]
         public async Task Remove()
         {
-            var settings = await _unit.Settings.GetAsync(Context.Guild);
-            if (settings != null)
+            using (var dbContext = new DatabaseContext(false, true, Context.Guild.Id))
             {
-                settings.GithubRepo = null;
-                _unit.SaveChanges();
-                await ReplyAsync(":ok_hand:");
+                if (dbContext.GuildConfig.GithubRepository != null)
+                {
+                    dbContext.GuildConfig.GithubRepository = null;
+                    dbContext.SaveChanges();
+                    await ReplyAsync(":ok_hand:");
+                }
+                else
+                    await ReplyAsync("No Github Repo set");
             }
-            else
-                await ReplyAsync("No Github Repo set");
         }
     }
 }

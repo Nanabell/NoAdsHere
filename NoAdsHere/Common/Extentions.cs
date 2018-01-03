@@ -29,5 +29,22 @@ namespace NoAdsHere.Common
             }
             return ret;
         }
+
+        /// <summary>
+        /// Parse a string into an <see cref="BooleanAliases"/> and that into a bool
+        /// </summary>
+        /// <param name="str">The string to be parsed</param>
+        /// <returns>True or false. Falls back to false if parse fails!</returns>
+        public static bool ParseStringToBool(this string str)
+        {
+            try
+            {
+                return Convert.ToBoolean(Enum.Parse(typeof(BooleanAliases), str));
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

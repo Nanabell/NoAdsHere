@@ -42,7 +42,7 @@ namespace NoAdsHere.Commands.Moderation
                         var responseResults = new List<string> { "yes", "y" };
                         if (responseResults.All(res => !response.Content.ToLower().Contains(res)))
                         {
-                            await ReplyAsync($"**{target}`({target.Id})`** was not Softbaned!");
+                            await ReplyAsync($"**{target}`({target.Id})`** was not Softbanned!");
                             return;
                         }
                     }
@@ -52,7 +52,7 @@ namespace NoAdsHere.Commands.Moderation
                         !string.IsNullOrWhiteSpace(banRason) ? banRason : "No reason specified!");
                     await Context.Guild.RemoveBanAsync(target);
 
-                    await ReplyAsync($"**{target}`({target.Id})`** was softbaned!");
+                    await ReplyAsync($"**{target}`({target.Id})`** was softbanned!");
                 }
                 else
                 {

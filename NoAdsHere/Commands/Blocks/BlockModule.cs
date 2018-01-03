@@ -1,32 +1,26 @@
-using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.UnitOfWork;
-using NoAdsHere.Services.AntiAds;
 using NoAdsHere.Services.LogService;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Blocks
 {
+    /*
     [Name("Blocks"), Alias("Block"), Group("Blocks")]
     public class BlockModule : ModuleBase<SocketCommandContext>
     {
         private readonly AntiAdsService _adsService;
-        private readonly LogChannelService _logChannelService;
-        private readonly DiscordShardedClient _client;
+        private readonly WebhookLogService _logChannelService;
         private readonly IUnitOfWork _unit;
 
-        public BlockModule(AntiAdsService adsService, LogChannelService logChannelService, DiscordShardedClient client, IUnitOfWork unit)
+        public BlockModule(AntiAdsService adsService, WebhookLogService logChannelService, IUnitOfWork unit)
         {
             _adsService = adsService;
             _logChannelService = logChannelService;
-            _client = client;
             _unit = unit;
         }
 
@@ -44,8 +38,8 @@ namespace NoAdsHere.Commands.Blocks
             }
             sb.AppendLine($"Please ensure that the bot has `MANAGE_MESSAGES` permission in the required channels");
             await ReplyAsync(sb.ToString());
-            await _logChannelService.LogMessageAsync(_client, Context.Client, Emote.Parse("<:Action:333712615731888129>"),
-                    $"{Context.User} enabled All Blocks in {Context.Guild}").ConfigureAwait(false);
+            await _logChannelService.LogActionAsync(Context.Guild,
+                $"{Context.User} enabled All Blocks in {Context.Guild}");
         }
 
         [Command("Disable All")]
@@ -61,8 +55,8 @@ namespace NoAdsHere.Commands.Blocks
                     : $":white_check_mark: Disabled `{type}`.");
             }
             await ReplyAsync(sb.ToString());
-            await _logChannelService.LogMessageAsync(_client, Context.Client, Emote.Parse("<:Action:333712615731888129>"),
-                    $"{Context.User} disabled All Blocks in {Context.Guild}").ConfigureAwait(false);
+            await _logChannelService.LogActionAsync(Context.Guild,
+                $"{Context.User} disabled All Blocks in {Context.Guild}");
         }
 
         [Command("Enable")]
@@ -77,8 +71,8 @@ namespace NoAdsHere.Commands.Blocks
                 if (success)
                 {
                     await ReplyAsync($":white_check_mark: Now blocking {blocktype}. Please ensure that the bot has the `Manage Messages` permission in the required channels.");
-                    await _logChannelService.LogMessageAsync(_client, Context.Client, Emote.Parse("<:Action:333712615731888129>"),
-                        $"{Context.User} enabled {blocktype} in {Context.Guild}").ConfigureAwait(false);
+                    await _logChannelService.LogActionAsync(Context.Guild,
+                        $"{Context.User} enabled {blocktype} in {Context.Guild}");
                 }
                 else
                 {
@@ -103,9 +97,8 @@ namespace NoAdsHere.Commands.Blocks
                 if (success)
                 {
                     await ReplyAsync($":white_check_mark: No longer blocking {blocktype}.");
-                    await _logChannelService.LogMessageAsync(_client, Context.Client,
-                        Emote.Parse("<:Action:333712615731888129>"),
-                        $"{Context.User} disabled {blocktype} in {Context.Guild}").ConfigureAwait(false);
+                    await _logChannelService.LogActionAsync(Context.Guild,
+                        $"{Context.User} disabled {blocktype} in {Context.Guild}");
                 }
                 else
                 {
@@ -166,4 +159,5 @@ namespace NoAdsHere.Commands.Blocks
             }
         }
     }
+    */
 }

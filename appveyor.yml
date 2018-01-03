@@ -1,4 +1,4 @@
-version: '1.0.{build}'
+version: '1.5.{build}'
 image: Visual Studio 2017
 configuration:
 #  - Debug
@@ -13,3 +13,4 @@ before_build:
   - appveyor-retry dotnet restore NoAdsHere.sln -s https://www.myget.org/F/discord-net/api/v3/index.json -s https://api.nuget.org/v3/index.json
 build_script:
   - dotnet build "NoAdsHere\NoAdsHere.csproj" -c %CONFIGURATION% --no-dependencies
+  - dotnet build "NoAdsHere.Tests\NoAdsHere.Tests.csproj" -c %CONFIGURATION%

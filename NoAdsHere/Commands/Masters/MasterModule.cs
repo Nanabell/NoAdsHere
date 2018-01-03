@@ -2,21 +2,15 @@ using Discord.Commands;
 using NoAdsHere.Commands.Penalties;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.UnitOfWork;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace NoAdsHere.Commands.Masters
 {
     [Name("Master")]
     public class MasterModule : ModuleBase
     {
-        private readonly IUnitOfWork _unit;
-
-        public MasterModule(IUnitOfWork unit)
-        {
-            _unit = unit;
-        }
-
+        /*
         [Command("Reset Guild")]
         [RequirePermission(AccessLevel.Master)]
         public async Task Reset(ulong guildId)
@@ -33,5 +27,6 @@ namespace NoAdsHere.Commands.Masters
                 await ReplyAsync($"Guild with the ID `{guildId}` not found!");
             }
         }
+        */
     }
 }

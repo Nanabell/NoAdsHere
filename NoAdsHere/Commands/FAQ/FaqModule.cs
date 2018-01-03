@@ -6,8 +6,6 @@ using Microsoft.Extensions.Configuration;
 using NLog;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.Entities.Guild;
-using NoAdsHere.Database.UnitOfWork;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +13,7 @@ using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.FAQ
 {
+    /*
     [Name("FAQ"), Group("FAQ")]
     public class FaqModule : ModuleBase
     {
@@ -175,7 +174,7 @@ namespace NoAdsHere.Commands.FAQ
         {
             try
             {
-                await channel.DeleteMessagesAsync(messages);
+                //await WTF IS BORK
             }
             catch (Exception e)
             {
@@ -183,4 +182,5 @@ namespace NoAdsHere.Commands.FAQ
             }
         }
     }
+    */
 }

@@ -5,8 +5,6 @@ using MoreLinq;
 using NoAdsHere.Commands.Blocks;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.Entities.Guild;
-using NoAdsHere.Database.UnitOfWork;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +13,7 @@ using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Ignores
 {
+    /*
     [Name("Ignores"), Alias("Ignore"), Group("Ignores")]
     public class IgnoreModule : ModuleBase<SocketCommandContext>
     {
@@ -257,4 +256,5 @@ namespace NoAdsHere.Commands.Ignores
                 await ReplyAsync("Currently no ignores");
         }
     }
+    */
 }

@@ -6,7 +6,8 @@ namespace NoAdsHere.Common.Preconditions
 {
     public class HiddenAttribute : PreconditionAttribute
     {
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command,
-            IServiceProvider services) => Task.FromResult(PreconditionResult.FromSuccess());
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command,
+            IServiceProvider services)
+            => Task.FromResult(PreconditionResult.FromSuccess());
     }
 }

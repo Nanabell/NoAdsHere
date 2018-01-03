@@ -3,15 +3,13 @@ using Discord.Commands;
 using Microsoft.Extensions.Logging;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.Entities.Guild;
-using NoAdsHere.Database.UnitOfWork;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace NoAdsHere.Commands.Penalties
 {
+    /*
     [Name("Penalties"), Alias("Penalty"), Group("Penalties")]
     public class PenaltyModule : ModuleBase
     {
@@ -104,10 +102,11 @@ namespace NoAdsHere.Commands.Penalties
             await unit.Penalties.AddRangeAsync(penaltyList);
 
             var changes = unit.SaveChanges();
-            _logger.LogDebug(new EventId(200), $"Sucessfully saved {changes} changes to database");
+            _logger.LogDebug($"Sucessfully saved {changes} changes to database");
 
             if (changes > 0)
-                _logger.LogInformation(new EventId(200), $"Added default penalties to guild {guild}");
+                _logger.LogInformation($"Added default penalties to guild {guild}");
         }
     }
+    */
 }

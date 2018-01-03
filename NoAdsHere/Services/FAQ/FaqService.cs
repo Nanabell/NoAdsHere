@@ -2,15 +2,16 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NoAdsHere.Common;
 using NoAdsHere.Common.Preconditions;
-using NoAdsHere.Database.UnitOfWork;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NoAdsHere.Database;
+using NoAdsHere.Database.Entities;
 
 namespace NoAdsHere.Services.FAQ
 {
@@ -18,59 +19,44 @@ namespace NoAdsHere.Services.FAQ
     {
         private readonly DiscordShardedClient _client;
         private readonly CommandService _commandService;
-        private readonly IServiceProvider _provider;
         private readonly IConfigurationRoot _config;
-        private readonly IUnitOfWork _unit;
-        private readonly ILogger _logger;
+        private readonly ILogger<FaqService> _logger;
 
-        public FaqService(DiscordShardedClient client, IUnitOfWork unit, IConfigurationRoot configuration,
-            ILoggerFactory factory)
+        public FaqService(DiscordShardedClient client, IConfigurationRoot configuration, ILogger<FaqService> logger)
         {
             _client = client;
             _commandService = new CommandService(new CommandServiceConfig { DefaultRunMode = RunMode.Async });
             _config = configuration;
-            _unit = unit;
-            _logger = factory.CreateLogger<FaqService>();
-            _provider = CreateProvider();
+            _logger = logger;
+            
+            _client.MessageReceived += FaqParser;
+            _commandService.AddModuleAsync<FaqCommands>().GetAwaiter().GetResult();
+            logger.LogInformation("Started Faq Service");
         }
 
-        private IServiceProvider CreateProvider()
-        {
-            return new ServiceCollection()
-                .AddSingleton(_config)
-                .AddSingleton(_unit)
-                .BuildServiceProvider();
-        }
-
-        public async Task LoadFaqsAsync()
-        {
-            _logger.LogInformation(new EventId(100), "Starting up Faq serice...");
-            _client.MessageReceived += FaqProccesser;
-            await _commandService.AddModuleAsync<FaqCommands>();
-            _logger.LogInformation(new EventId(200), "Faq service started");
-        }
-
-        private async Task FaqProccesser(SocketMessage socketMessage)
+        private async Task FaqParser(SocketMessage socketMessage)
         {
             var argPos = 0;
-            var message = socketMessage as SocketUserMessage;
-            if (message == null)
+            if (!(socketMessage is SocketUserMessage message))
                 return;
-            if (!message.HasStringPrefix(_config["Prefixes:Faq"], ref argPos, StringComparison.OrdinalIgnoreCase))
+            
+            if (!message.HasStringPrefix(_config.Get<Config>().Prefix.Faq, ref argPos, StringComparison.OrdinalIgnoreCase))
                 return;
+            
             var context = new ShardedCommandContext(_client, message);
             if (context.IsPrivate)
                 return;
+            
             if (!context.Channel.CheckChannelPermission(ChannelPermission.SendMessages, context.Guild.CurrentUser))
                 return;
 
-            var result = await _commandService.ExecuteAsync(context, argPos, _provider);
+            var result = await _commandService.ExecuteAsync(context, argPos);
 
             if (!result.IsSuccess)
             {
-                if (message.HasStringPrefix(_config["Prefixes:Main"], ref argPos, StringComparison.OrdinalIgnoreCase))
+                if (message.HasStringPrefix(_config.Get<Config>().Prefix.Main, ref argPos, StringComparison.OrdinalIgnoreCase))
                     return;
-                _logger.LogWarning(new EventId(515), result.ErrorReason);
+                _logger.LogWarning(result.ErrorReason);
             }
         }
     }
@@ -78,22 +64,15 @@ namespace NoAdsHere.Services.FAQ
     [DontAutoLoad]
     internal class FaqCommands : ModuleBase
     {
-        private readonly IUnitOfWork _unit;
-        private readonly IConfigurationRoot _config;
-
-        public FaqCommands(IUnitOfWork unit, IConfigurationRoot config)
-        {
-            _unit = unit;
-            _config = config;
-        }
-
         [Command("faq"), Alias("faqs")]
         [RequirePermission(AccessLevel.User)]
         public async Task Faq([Remainder]string name = null)
         {
+            var dbContext = new DatabaseContext(loadGuildConfig: true, guildId: Context.Guild.Id, createNewFile: false);
+            
             if (name == null)
             {
-                var faqs = (await _unit.Faqs.GetAllAsync(Context.Guild)).ToList();
+                var faqs = dbContext.GuildConfig.Faqs;
                 var sb = new StringBuilder();
                 sb.AppendLine("**Frequently Asked Questions:**");
 
@@ -109,22 +88,24 @@ namespace NoAdsHere.Services.FAQ
             }
             else
             {
-                var faq = await _unit.Faqs.GetAsync(Context.Guild, name);
+                name = name.ToLower();
+                var faq = dbContext.GuildConfig.Faqs.FirstOrDefault(faqEntry =>
+                    faqEntry.GuildId == Context.Guild.Id && faqEntry.Name == name);
 
                 if (faq != null)
                 {
                     await ReplyAsync(faq.Content);
                     faq.LastUsed = DateTime.UtcNow;
-                    faq.UseCount++;
-                    _unit.SaveChanges();
+                    faq.Uses++;
+                    dbContext.SaveChanges();
                 }
                 else
                 {
-                    var faqs = await _unit.Faqs.GetAllAsync(Context.Guild);
+                    var faqs = dbContext.GuildConfig.Faqs;
 
                     if (faqs.Any())
                     {
-                        var similarFaqs = await _unit.Faqs.GetSimilarAsync(_config, Context.Guild, name);
+                        var similarFaqs = GetSimilarFaqs(faqs, name);
 
                         if (similarFaqs.Any())
                         {
@@ -142,6 +123,15 @@ namespace NoAdsHere.Services.FAQ
                         await ReplyAsync($"No FAQ entries existing.");
                 }
             }
+        }
+
+        private static Dictionary<Faq, int> GetSimilarFaqs(IEnumerable<Faq> faqs, string name)
+        {
+            var faqDictionary = faqs.ToDictionary(faq => faq, faq => LevenshteinDistance.Compute(name, faq.Name));
+            return faqDictionary
+                .Where(pair => pair.Value <= 4)
+                .OrderBy(pair => pair.Value)
+                .ToDictionary(pair => pair.Key, pair => pair.Value);
         }
     }
 }
