@@ -10,26 +10,26 @@ namespace Bot.Modules.Moderation
 {
     [RequireContext(ContextType.Guild)]
     [RequireBotPermission(GuildPermission.BanMembers)]
-    [RequireAccessLevel(AccessLevel.Moderator)]
-    public class SoftbanCommand : CentralModuleBase
+    [RequireAccessLevel(AccessLevel.Admin)]
+    public class BanCommand : CentralModuleBase
     {
-        [Command("Softban")]
-        public async Task SoftBan(SocketGuildUser target, [Remainder] string reason = null)
-            => await SoftBan(Context, target.Id, reason);
+        [Command("Ban")]
+        public async Task Ban(SocketGuildUser target, [Remainder] string reason = null)
+            => await BanAsync(Context, target.Id, reason);
+        
+        [Command("Ban")]
+        public async Task Ban(ulong targetId, [Remainder] string reason = null)
+            => await BanAsync(Context, targetId, reason);
 
-        [Command("Softban")]
-        public async Task Softban(ulong targetId, [Remainder] string reason = null)
-            => await SoftBan(Context, targetId, reason);
-
-        private async Task SoftBan(SocketCommandContext context, ulong targetId, string reason)
+        private async Task BanAsync(SocketCommandContext context, ulong targetId, string reason)
         {
             var target = context.Guild.GetUser(targetId);
             var targetHierarchy = 0;
             if (target != null)
                 targetHierarchy = target.Hierarchy;
             
-            var invoker = (SocketGuildUser) context.User;
-            var self = context.Guild.CurrentUser;
+            var invoker = (SocketGuildUser) Context.User;
+            var self = Context.Guild.CurrentUser;
 
             if (invoker.Id == targetId)
             {
@@ -45,22 +45,21 @@ namespace Bot.Modules.Moderation
                 {
                     try
                     {
-                        await context.Guild.AddBanAsync(targetId, 7, $"{invoker}: " + reason);
-                        await context.Guild.RemoveBanAsync(target);
+                        await Context.Guild.AddBanAsync(targetId, 7, $"{invoker}: " + reason);
                         await ReplyAsync(
-                            $"***{Format.Sanitize(target?.ToString() ?? targetId.ToString())}*** has been Softbanned!");
+                            $"***{Format.Sanitize(target?.ToString() ?? targetId.ToString())}*** has been Banned!");
                     }
                     catch (HttpException ex)
                     {
                         await ReplyAsync(
-                            $"Failed to Softban ***{Format.Sanitize(target?.ToString() ?? targetId.ToString())}***\n"
+                            $"Failed to Ban ***{Format.Sanitize(target?.ToString() ?? targetId.ToString())}***\n"
                             + ex.Message);
                     }
                 }
                 else
                 {
                     await SendMessageWithEmotesAsync("{0} "
-                        + $"I don't have enough permission to Softban {Format.Italics(Format.Sanitize(target?.ToString() ?? targetId.ToString()))}",
+                        + $"I don't have enough permission to Ban {Format.Italics(Format.Sanitize(target?.ToString() ?? targetId.ToString()))}",
                         new object[] {"<:ThisIsFine:356157243923628043>"},
                         new object[] {":x:"});
                 }
@@ -68,7 +67,7 @@ namespace Bot.Modules.Moderation
             else
             {
                 await SendMessageWithEmotesAsync("{0} "
-                    + $"You don't have enough permission to Softban {Format.Italics(Format.Sanitize(target?.ToString() ?? targetId.ToString()))}",
+                    + $"You don't have enough permission to Ban {Format.Italics(Format.Sanitize(target?.ToString() ?? targetId.ToString()))}",
                     new object[] {"<:ThisIsFine:356157243923628043>"},
                     new object[] {":x:"});
             }
